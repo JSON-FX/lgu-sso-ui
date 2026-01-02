@@ -32,7 +32,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ArrowLeft, Plus, Pencil, Trash2, Loader2, Users, AppWindow } from "lucide-react";
-import { mockApplicationApi, mockEmployeeApi } from "@/lib/mock";
+import { api } from "@/lib/api";
 import { Application, Employee, Role, ApplicationEmployee } from "@/types";
 import { toast } from "sonner";
 
@@ -71,14 +71,20 @@ export default function ApplicationEmployeesPage() {
 
   const loadData = async () => {
     try {
-      const [appRes, employeesRes, appEmployeesRes] = await Promise.all([
-        mockApplicationApi.get(uuid),
-        mockEmployeeApi.list(),
-        mockApplicationApi.getEmployees(uuid),
+      const [appRes, employeesRes] = await Promise.all([
+        api.applications.get(uuid),
+        api.employees.list(),
       ]);
       setApplication(appRes.data);
       setAllEmployees(employeesRes.data);
-      setAppEmployees(appEmployeesRes.data);
+
+      // Application employees endpoint is optional - may not exist in backend yet
+      try {
+        const appEmployeesRes = await api.applications.getEmployees(uuid);
+        setAppEmployees(appEmployeesRes.data);
+      } catch {
+        // Endpoint not available, continue without it
+      }
     } catch (error) {
       console.error("Failed to load data:", error);
       toast.error("Failed to load data");
@@ -100,7 +106,7 @@ export default function ApplicationEmployeesPage() {
 
     setIsAdding(true);
     try {
-      await mockApplicationApi.grantAccess(uuid, selectedEmployee, selectedRole);
+      await api.applications.grantAccess(uuid, selectedEmployee, selectedRole);
       toast.success("Access granted successfully");
       setAddDialogOpen(false);
       setSelectedEmployee("");
@@ -122,7 +128,7 @@ export default function ApplicationEmployeesPage() {
 
     setIsEditing(true);
     try {
-      await mockApplicationApi.updateAccess(uuid, editingEmployee.uuid, editRole);
+      await api.applications.updateAccess(uuid, editingEmployee.uuid, editRole);
       toast.success("Role updated successfully");
       setEditDialogOpen(false);
       setEditingEmployee(null);
@@ -139,7 +145,7 @@ export default function ApplicationEmployeesPage() {
 
     setIsDeleting(true);
     try {
-      await mockApplicationApi.revokeAccess(uuid, deletingEmployee.uuid);
+      await api.applications.revokeAccess(uuid, deletingEmployee.uuid);
       toast.success("Access revoked successfully");
       setDeleteDialogOpen(false);
       setDeletingEmployee(null);

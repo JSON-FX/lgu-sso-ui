@@ -30,7 +30,7 @@ import {
   AppWindow,
   ExternalLink,
 } from "lucide-react";
-import { mockApplicationApi } from "@/lib/mock";
+import { api } from "@/lib/api";
 import { Application } from "@/types";
 
 export default function ApplicationsPage() {
@@ -41,7 +41,7 @@ export default function ApplicationsPage() {
   useEffect(() => {
     async function loadApplications() {
       try {
-        const response = await mockApplicationApi.list();
+        const response = await api.applications.list();
         setApplications(response.data);
       } catch (error) {
         console.error("Failed to load applications:", error);

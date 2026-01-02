@@ -44,7 +44,7 @@ import {
   AlertTriangle,
   RefreshCw,
 } from "lucide-react";
-import { mockApplicationApi } from "@/lib/mock";
+import { api } from "@/lib/api";
 import { Application, UpdateApplicationData, ApplicationEmployee } from "@/types";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -72,12 +72,8 @@ export default function ApplicationDetailPage() {
   useEffect(() => {
     async function loadApplication() {
       try {
-        const [appResponse, employeesResponse] = await Promise.all([
-          mockApplicationApi.get(uuid),
-          mockApplicationApi.getEmployees(uuid),
-        ]);
+        const appResponse = await api.applications.get(uuid);
         setApplication(appResponse.data);
-        setEmployees(employeesResponse.data);
         setFormData({
           name: appResponse.data.name,
           description: appResponse.data.description || "",
@@ -85,6 +81,14 @@ export default function ApplicationDetailPage() {
           rate_limit_per_minute: appResponse.data.rate_limit_per_minute,
           is_active: appResponse.data.is_active,
         });
+
+        // Employees endpoint is optional - may not exist in backend yet
+        try {
+          const employeesResponse = await api.applications.getEmployees(uuid);
+          setEmployees(employeesResponse.data);
+        } catch {
+          // Employees endpoint not available, continue without it
+        }
       } catch (error) {
         console.error("Failed to load application:", error);
         toast.error("Failed to load application details");
@@ -125,7 +129,7 @@ export default function ApplicationDetailPage() {
         ...formData,
         redirect_uris: formData.redirect_uris?.filter((uri) => uri.trim() !== ""),
       };
-      const response = await mockApplicationApi.update(uuid, cleanedData);
+      const response = await api.applications.update(uuid, cleanedData);
       setApplication(response.data);
       toast.success("Application updated successfully");
     } catch (error) {
@@ -138,7 +142,7 @@ export default function ApplicationDetailPage() {
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      await mockApplicationApi.delete(uuid);
+      await api.applications.delete(uuid);
       toast.success("Application deleted successfully");
       router.push("/applications");
     } catch (error) {
@@ -152,7 +156,7 @@ export default function ApplicationDetailPage() {
   const handleRegenerateSecret = async () => {
     setIsRegenerating(true);
     try {
-      const response = await mockApplicationApi.regenerateSecret(uuid);
+      const response = await api.applications.regenerateSecret(uuid);
       setNewSecret(response.data.client_secret);
       setRegenerateDialogOpen(false);
       setSecretDialogOpen(true);

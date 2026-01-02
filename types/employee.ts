@@ -54,6 +54,7 @@ export interface CreateEmployeeData {
   suffix?: string;
   birthday: string;
   civil_status: Employee["civil_status"];
+  region_code?: string;
   province_code?: string;
   city_code?: string;
   barangay_code?: string;
@@ -77,6 +78,7 @@ export interface UpdateEmployeeData {
   suffix?: string;
   birthday?: string;
   civil_status?: Employee["civil_status"];
+  region_code?: string;
   province_code?: string;
   city_code?: string;
   barangay_code?: string;

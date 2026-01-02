@@ -19,7 +19,7 @@ import {
   Shield,
   Clock,
 } from "lucide-react";
-import { mockStatsApi, mockAuditApi } from "@/lib/mock";
+import { api } from "@/lib/api";
 import { AuditLog } from "@/types";
 import { formatDistanceToNow } from "date-fns";
 
@@ -58,8 +58,8 @@ export default function DashboardPage() {
     async function loadData() {
       try {
         const [statsData, activityData] = await Promise.all([
-          mockStatsApi.getDashboardStats(),
-          mockAuditApi.list({ per_page: 5 }),
+          api.stats.getDashboardStats(),
+          api.audit.list({ per_page: 5 }),
         ]);
         setStats(statsData);
         setRecentActivity(activityData.data);

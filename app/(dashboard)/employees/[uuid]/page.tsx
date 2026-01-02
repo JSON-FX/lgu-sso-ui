@@ -28,21 +28,34 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
   ArrowLeft,
   Save,
   Trash2,
   Key,
   Mail,
-  Phone,
   MapPin,
-  Calendar,
   User,
   Loader2,
   Briefcase,
-  Building2,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
-import { mockEmployeeApi, mockLocationApi, mockOfficeApi } from "@/lib/mock";
-import { Employee, Location, Office, UpdateEmployeeData } from "@/types";
+import { api } from "@/lib/api";
+import { psgcApi, PSGCRegion, PSGCProvince, PSGCMunicipality, PSGCBarangay } from "@/lib/api/psgc";
+import { Employee, Office, UpdateEmployeeData } from "@/types";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -59,23 +72,44 @@ export default function EmployeeDetailPage() {
 
   // Form state
   const [formData, setFormData] = useState<UpdateEmployeeData>({});
-  const [provinces, setProvinces] = useState<Location[]>([]);
-  const [cities, setCities] = useState<Location[]>([]);
-  const [barangays, setBarangays] = useState<Location[]>([]);
+  const [regions, setRegions] = useState<PSGCRegion[]>([]);
+  const [provinces, setProvinces] = useState<PSGCProvince[]>([]);
+  const [municipalities, setMunicipalities] = useState<PSGCMunicipality[]>([]);
+  const [barangays, setBarangays] = useState<PSGCBarangay[]>([]);
   const [offices, setOffices] = useState<Office[]>([]);
+
+  // Location form state
+  const [regionCode, setRegionCode] = useState<string>("");
+  const [provinceCode, setProvinceCode] = useState<string>("");
+  const [municipalityCode, setMunicipalityCode] = useState<string>("");
+  const [barangayCode, setBarangayCode] = useState<string>("");
+
+  // Combobox open states
+  const [regionOpen, setRegionOpen] = useState(false);
+  const [provinceOpen, setProvinceOpen] = useState(false);
+  const [municipalityOpen, setMunicipalityOpen] = useState(false);
+  const [barangayOpen, setBarangayOpen] = useState(false);
 
   useEffect(() => {
     async function loadEmployee() {
       try {
-        const [employeeRes, provincesRes, officesRes] = await Promise.all([
-          mockEmployeeApi.get(uuid),
-          mockLocationApi.getProvinces(),
-          mockOfficeApi.list(),
+        const [employeeRes, regionsData] = await Promise.all([
+          api.employees.get(uuid),
+          psgcApi.getRegions(),
         ]);
 
+        // Offices API is optional - may not exist in backend yet
+        let officesData: Office[] = [];
+        try {
+          const officesRes = await api.offices.list();
+          officesData = officesRes.data;
+        } catch {
+          // Offices endpoint not available, continue without it
+        }
+
         setEmployee(employeeRes.data);
-        setProvinces(provincesRes.data);
-        setOffices(officesRes.data);
+        setRegions(regionsData);
+        setOffices(officesData);
 
         setFormData({
           first_name: employeeRes.data.first_name,
@@ -94,15 +128,9 @@ export default function EmployeeDetailPage() {
           date_terminated: employeeRes.data.date_terminated || "",
         });
 
-        if (employeeRes.data.province?.code) {
-          const citiesData = await mockLocationApi.getCities(employeeRes.data.province.code);
-          setCities(citiesData.data);
-        }
-
-        if (employeeRes.data.city?.code) {
-          const barangaysData = await mockLocationApi.getBarangays(employeeRes.data.city.code);
-          setBarangays(barangaysData.data);
-        }
+        // Note: existing employee data may have province/city/barangay from old structure
+        // For now, we don't pre-populate since we're switching to the new PSGC structure
+        // The user will need to re-select location data
       } catch (error) {
         console.error("Failed to load employee:", error);
         toast.error("Failed to load employee details");
@@ -114,10 +142,68 @@ export default function EmployeeDetailPage() {
     loadEmployee();
   }, [uuid]);
 
+  const handleRegionChange = async (code: string) => {
+    setRegionCode(code);
+    setProvinceCode("");
+    setMunicipalityCode("");
+    setBarangayCode("");
+    setProvinces([]);
+    setMunicipalities([]);
+    setBarangays([]);
+
+    if (code) {
+      try {
+        const data = await psgcApi.getProvinces(code);
+        setProvinces(data);
+      } catch (error) {
+        console.error("Failed to load provinces:", error);
+      }
+    }
+  };
+
+  const handleProvinceChange = async (code: string) => {
+    setProvinceCode(code);
+    setMunicipalityCode("");
+    setBarangayCode("");
+    setMunicipalities([]);
+    setBarangays([]);
+
+    if (code) {
+      try {
+        const data = await psgcApi.getMunicipalities(code);
+        setMunicipalities(data);
+      } catch (error) {
+        console.error("Failed to load municipalities:", error);
+      }
+    }
+  };
+
+  const handleMunicipalityChange = async (code: string) => {
+    setMunicipalityCode(code);
+    setBarangayCode("");
+    setBarangays([]);
+
+    if (code) {
+      try {
+        const data = await psgcApi.getBarangays(code);
+        setBarangays(data);
+      } catch (error) {
+        console.error("Failed to load barangays:", error);
+      }
+    }
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const response = await mockEmployeeApi.update(uuid, formData);
+      const updateData = {
+        ...formData,
+        region_code: regionCode || undefined,
+        province_code: provinceCode || undefined,
+        city_code: municipalityCode || undefined,
+        barangay_code: barangayCode || undefined,
+      };
+      const response = await api.employees.update(uuid, updateData);
       setEmployee(response.data);
       toast.success("Employee updated successfully");
     } catch (error) {
@@ -130,7 +216,7 @@ export default function EmployeeDetailPage() {
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      await mockEmployeeApi.delete(uuid);
+      await api.employees.delete(uuid);
       toast.success("Employee deleted successfully");
       router.push("/employees");
     } catch (error) {
@@ -440,53 +526,200 @@ export default function EmployeeDetailPage() {
                 Address
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-6 md:grid-cols-3">
+            <CardContent className="grid gap-6 md:grid-cols-2">
+              {/* Region */}
+              <div className="space-y-2">
+                <Label>Region</Label>
+                <Popover open={regionOpen} onOpenChange={setRegionOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={regionOpen}
+                      className="w-full justify-between font-normal"
+                    >
+                      {regionCode
+                        ? regions.find((r) => r.code === regionCode)?.name
+                        : "Select region"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search region..." />
+                      <CommandList>
+                        <CommandEmpty>No region found.</CommandEmpty>
+                        <CommandGroup>
+                          {regions.map((r) => (
+                            <CommandItem
+                              key={r.code}
+                              value={r.name}
+                              onSelect={() => {
+                                handleRegionChange(r.code);
+                                setRegionOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={`mr-2 h-4 w-4 ${
+                                  regionCode === r.code ? "opacity-100" : "opacity-0"
+                                }`}
+                              />
+                              {r.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Province */}
               <div className="space-y-2">
                 <Label>Province</Label>
-                <Select value={employee.province?.code || ""} disabled>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select province" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {provinces.map((p) => (
-                      <SelectItem key={p.code} value={p.code}>
-                        {p.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={provinceOpen} onOpenChange={setProvinceOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={provinceOpen}
+                      className="w-full justify-between font-normal"
+                      disabled={!regionCode}
+                    >
+                      {provinceCode
+                        ? provinces.find((p) => p.code === provinceCode)?.name
+                        : "Select province"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search province..." />
+                      <CommandList>
+                        <CommandEmpty>No province found.</CommandEmpty>
+                        <CommandGroup>
+                          {provinces.map((p) => (
+                            <CommandItem
+                              key={p.code}
+                              value={p.name}
+                              onSelect={() => {
+                                handleProvinceChange(p.code);
+                                setProvinceOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={`mr-2 h-4 w-4 ${
+                                  provinceCode === p.code ? "opacity-100" : "opacity-0"
+                                }`}
+                              />
+                              {p.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
+
+              {/* Municipality */}
               <div className="space-y-2">
                 <Label>City/Municipality</Label>
-                <Select value={employee.city?.code || ""} disabled>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select city" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cities.map((c) => (
-                      <SelectItem key={c.code} value={c.code}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={municipalityOpen} onOpenChange={setMunicipalityOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={municipalityOpen}
+                      className="w-full justify-between font-normal"
+                      disabled={!provinceCode}
+                    >
+                      {municipalityCode
+                        ? municipalities.find((m) => m.code === municipalityCode)?.name
+                        : "Select city/municipality"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search city/municipality..." />
+                      <CommandList>
+                        <CommandEmpty>No city/municipality found.</CommandEmpty>
+                        <CommandGroup>
+                          {municipalities.map((m) => (
+                            <CommandItem
+                              key={m.code}
+                              value={m.name}
+                              onSelect={() => {
+                                handleMunicipalityChange(m.code);
+                                setMunicipalityOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={`mr-2 h-4 w-4 ${
+                                  municipalityCode === m.code ? "opacity-100" : "opacity-0"
+                                }`}
+                              />
+                              {m.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
+
+              {/* Barangay */}
               <div className="space-y-2">
                 <Label>Barangay</Label>
-                <Select value={employee.barangay?.code || ""} disabled>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select barangay" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {barangays.map((b) => (
-                      <SelectItem key={b.code} value={b.code}>
-                        {b.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={barangayOpen} onOpenChange={setBarangayOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={barangayOpen}
+                      className="w-full justify-between font-normal"
+                      disabled={!municipalityCode}
+                    >
+                      {barangayCode
+                        ? barangays.find((b) => b.code === barangayCode)?.name
+                        : "Select barangay"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search barangay..." />
+                      <CommandList>
+                        <CommandEmpty>No barangay found.</CommandEmpty>
+                        <CommandGroup>
+                          {barangays.map((b) => (
+                            <CommandItem
+                              key={b.code}
+                              value={b.name}
+                              onSelect={() => {
+                                setBarangayCode(b.code);
+                                setBarangayOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={`mr-2 h-4 w-4 ${
+                                  barangayCode === b.code ? "opacity-100" : "opacity-0"
+                                }`}
+                              />
+                              {b.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
-              <div className="space-y-2 md:col-span-3">
+
+              {/* Street Address */}
+              <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="residence">Street Address</Label>
                 <Textarea
                   id="residence"

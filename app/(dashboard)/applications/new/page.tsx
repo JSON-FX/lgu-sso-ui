@@ -17,7 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ArrowLeft, Loader2, Plus, AppWindow, Link2, Gauge, X, Copy, Check, AlertTriangle } from "lucide-react";
-import { mockApplicationApi } from "@/lib/mock";
+import { api } from "@/lib/api";
 import { CreateApplicationData, ApplicationWithSecret } from "@/types";
 import { toast } from "sonner";
 
@@ -103,7 +103,7 @@ export default function NewApplicationPage() {
         ...formData,
         redirect_uris: formData.redirect_uris.filter((uri) => uri.trim() !== ""),
       };
-      const response = await mockApplicationApi.create(cleanedData);
+      const response = await api.applications.create(cleanedData);
       setCreatedApp(response.data);
       setSecretDialogOpen(true);
       toast.success("Application created successfully");

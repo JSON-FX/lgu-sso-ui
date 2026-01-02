@@ -1,5 +1,11 @@
-import { ErrorResponse } from "@/types";
+/**
+ * API Client
+ *
+ * Base HTTP client for making API requests to the LGU-SSO backend.
+ */
+
 import Cookies from "js-cookie";
+import { ErrorResponse } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://lgu-sso.test/api/v1";
 
@@ -93,7 +99,7 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
   return data as T;
 }
 
-export const api = {
+export const apiClient = {
   get: <T>(endpoint: string, params?: Record<string, string | number | boolean | undefined>) =>
     fetchApi<T>(endpoint, { method: "GET", params }),
 

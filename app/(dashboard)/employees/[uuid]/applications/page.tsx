@@ -32,7 +32,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ArrowLeft, Plus, Pencil, Trash2, Loader2, Key, AppWindow } from "lucide-react";
-import { mockEmployeeApi, mockApplicationApi } from "@/lib/mock";
+import { api } from "@/lib/api";
 import { Employee, Application, Role, EmployeeApplication } from "@/types";
 import { toast } from "sonner";
 
@@ -72,9 +72,9 @@ export default function EmployeeApplicationsPage() {
   const loadData = async () => {
     try {
       const [employeeRes, appsRes, employeeAppsRes] = await Promise.all([
-        mockEmployeeApi.get(uuid),
-        mockApplicationApi.list(),
-        mockEmployeeApi.getApplications(uuid),
+        api.employees.get(uuid),
+        api.applications.list(),
+        api.employees.getApplications(uuid),
       ]);
       setEmployee(employeeRes.data);
       setAllApplications(appsRes.data);
@@ -100,7 +100,7 @@ export default function EmployeeApplicationsPage() {
 
     setIsAdding(true);
     try {
-      await mockEmployeeApi.grantAccess(uuid, selectedApp, selectedRole);
+      await api.employees.grantAccess(uuid, selectedApp, selectedRole);
       toast.success("Access granted successfully");
       setAddDialogOpen(false);
       setSelectedApp("");
@@ -122,7 +122,7 @@ export default function EmployeeApplicationsPage() {
 
     setIsEditing(true);
     try {
-      await mockEmployeeApi.updateAccess(uuid, editingApp.uuid, editRole);
+      await api.employees.updateAccess(uuid, editingApp.uuid, editRole);
       toast.success("Role updated successfully");
       setEditDialogOpen(false);
       setEditingApp(null);
@@ -139,7 +139,7 @@ export default function EmployeeApplicationsPage() {
 
     setIsDeleting(true);
     try {
-      await mockEmployeeApi.revokeAccess(uuid, deletingApp.uuid);
+      await api.employees.revokeAccess(uuid, deletingApp.uuid);
       toast.success("Access revoked successfully");
       setDeleteDialogOpen(false);
       setDeletingApp(null);

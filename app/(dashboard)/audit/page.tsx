@@ -61,7 +61,7 @@ import {
   Check,
   ChevronsUpDown,
 } from "lucide-react";
-import { mockAuditApi, mockEmployeeApi, mockApplicationApi } from "@/lib/mock";
+import { api } from "@/lib/api";
 import { AuditLog, Employee, Application, AuditLogFilters } from "@/types";
 import { format } from "date-fns";
 
@@ -133,9 +133,9 @@ export default function AuditLogsPage() {
     setIsLoading(true);
     try {
       const [logsRes, employeesRes, appsRes] = await Promise.all([
-        mockAuditApi.list({ ...filters, page, per_page: 15 }),
-        mockEmployeeApi.list(1, 100),
-        mockApplicationApi.list(),
+        api.audit.list({ ...filters, page, per_page: 15 }),
+        api.employees.list(1, 100),
+        api.applications.list(),
       ]);
 
       setLogs(logsRes.data);

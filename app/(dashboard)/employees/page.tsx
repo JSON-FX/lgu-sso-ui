@@ -39,7 +39,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { mockEmployeeApi } from "@/lib/mock";
+import { api } from "@/lib/api";
 import { Employee, PaginatedResponse } from "@/types";
 import { format } from "date-fns";
 
@@ -56,7 +56,7 @@ export default function EmployeesPage() {
     setIsLoading(true);
     try {
       const status = statusFilter === "all" ? undefined : (statusFilter as "active" | "inactive");
-      const response = await mockEmployeeApi.list(page, 10, search || undefined, status);
+      const response = await api.employees.list(page, 10, search || undefined, status);
       setEmployees(response.data);
       setMeta(response.meta);
     } catch (error) {
