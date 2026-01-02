@@ -1,0 +1,103 @@
+export interface Location {
+  code: string;
+  name: string;
+}
+
+export interface Office {
+  id: number;
+  name: string;
+  abbreviation: string;
+}
+
+export interface Employee {
+  uuid: string;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+  suffix: string | null;
+  full_name: string;
+  initials: string;
+  birthday: string;
+  age: number;
+  civil_status: "single" | "married" | "widowed" | "separated" | "divorced";
+  email: string;
+  is_active: boolean;
+  nationality: string;
+  residence: string;
+  block_number: string | null;
+  building_floor: string | null;
+  house_number: string | null;
+  province: Location | null;
+  city: Location | null;
+  barangay: Location | null;
+  office: Office | null;
+  position: string | null;
+  date_employed: string | null;
+  date_terminated: string | null;
+  created_at: string;
+  updated_at: string;
+  applications?: EmployeeApplication[];
+}
+
+export interface EmployeeApplication {
+  uuid: string;
+  name: string;
+  role: Role;
+}
+
+export type Role = "guest" | "standard" | "administrator" | "super_administrator";
+
+export interface CreateEmployeeData {
+  first_name: string;
+  middle_name?: string;
+  last_name: string;
+  suffix?: string;
+  birthday: string;
+  civil_status: Employee["civil_status"];
+  province_code?: string;
+  city_code?: string;
+  barangay_code?: string;
+  block_number?: string;
+  building_floor?: string;
+  house_number?: string;
+  residence: string;
+  nationality: string;
+  email: string;
+  password: string;
+  office_id?: number;
+  position: string;
+  date_employed?: string;
+  date_terminated?: string;
+}
+
+export interface UpdateEmployeeData {
+  first_name?: string;
+  middle_name?: string;
+  last_name?: string;
+  suffix?: string;
+  birthday?: string;
+  civil_status?: Employee["civil_status"];
+  province_code?: string;
+  city_code?: string;
+  barangay_code?: string;
+  block_number?: string;
+  building_floor?: string;
+  house_number?: string;
+  residence?: string;
+  nationality?: string;
+  email?: string;
+  is_active?: boolean;
+  office_id?: number;
+  position?: string;
+  date_employed?: string;
+  date_terminated?: string;
+}
+
+export interface GrantAppAccessData {
+  application_uuid: string;
+  role: Role;
+}
+
+export interface UpdateAppAccessData {
+  role: Role;
+}
