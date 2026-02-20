@@ -42,6 +42,7 @@ import {
 import { api } from "@/lib/api";
 import { Employee, PaginatedResponse } from "@/types";
 import { format } from "date-fns";
+import { ViewEmployeeModal } from "@/components/employees/view-employee-modal";
 
 export default function EmployeesPage() {
   const router = useRouter();
@@ -51,6 +52,15 @@ export default function EmployeesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
+
+  // View modal state
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+
+  const handleViewEmployee = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setViewModalOpen(true);
+  };
 
   const loadEmployees = async () => {
     setIsLoading(true);
@@ -165,7 +175,7 @@ export default function EmployeesPage() {
                 <TableRow
                   key={employee.uuid}
                   className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => router.push(`/employees/${employee.uuid}`)}
+                  onClick={() => handleViewEmployee(employee)}
                 >
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -176,7 +186,7 @@ export default function EmployeesPage() {
                         <p className="font-medium">{employee.full_name}</p>
                         {employee.city && (
                           <p className="text-xs text-muted-foreground">
-                            {employee.city.name}
+                            {employee.city}
                           </p>
                         )}
                       </div>
@@ -216,7 +226,7 @@ export default function EmployeesPage() {
                         <DropdownMenuItem
                           onClick={(e) => {
                             e.stopPropagation();
-                            router.push(`/employees/${employee.uuid}`);
+                            handleViewEmployee(employee);
                           }}
                         >
                           <Eye className="mr-2 h-4 w-4" />
@@ -288,6 +298,13 @@ export default function EmployeesPage() {
           </div>
         )}
       </div>
+
+      {/* View Employee Modal */}
+      <ViewEmployeeModal
+        employee={selectedEmployee}
+        open={viewModalOpen}
+        onOpenChange={setViewModalOpen}
+      />
     </div>
   );
 }

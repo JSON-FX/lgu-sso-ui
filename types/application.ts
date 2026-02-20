@@ -42,9 +42,3 @@ export interface ApplicationEmployee {
   email: string;
   role: import("./employee").Role;
 }
-
-export interface EmployeeApplication {
-  uuid: string;
-  name: string;
-  role: import("./employee").Role;
-}

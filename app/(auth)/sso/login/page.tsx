@@ -1,0 +1,342 @@
+"use client";
+
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Shield, Mail, Lock, Loader2, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://lgu-sso.test/api/v1";
+
+type ValidationState =
+  | { status: "loading" }
+  | { status: "missing-params" }
+  | { status: "error"; message: string }
+  | { status: "validated"; applicationName: string };
+
+function SSOLoginContent() {
+  const searchParams = useSearchParams();
+  const redirectUri = searchParams.get("redirect_uri");
+  const clientId = searchParams.get("client_id");
+  const state = searchParams.get("state");
+
+  const [validation, setValidation] = useState<ValidationState>({
+    status: "loading",
+  });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState("");
+
+  const validateRedirect = useCallback(async () => {
+    if (!redirectUri || !clientId || !state) {
+      setValidation({ status: "missing-params" });
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/sso/validate-redirect`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            client_id: clientId,
+            redirect_uri: redirectUri,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        const message =
+          data?.message || "The redirect request could not be validated.";
+        setValidation({ status: "error", message });
+        return;
+      }
+
+      const data = await response.json();
+      setValidation({
+        status: "validated",
+        applicationName: data.application_name || data.app_name || "the application",
+      });
+    } catch {
+      setValidation({
+        status: "error",
+        message:
+          "Unable to connect to the authentication server. Please try again later.",
+      });
+    }
+  }, [redirectUri, clientId, state]);
+
+  useEffect(() => {
+    validateRedirect();
+  }, [validateRedirect]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError("");
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        const message =
+          data?.message || "Invalid email or password. Please try again.";
+        setLoginError(message);
+        return;
+      }
+
+      const data = await response.json();
+      const accessToken = data.access_token || data.token;
+
+      if (!accessToken) {
+        setLoginError("Authentication succeeded but no token was returned.");
+        return;
+      }
+
+      toast.success("Authentication successful. Redirecting...");
+
+      const separator = redirectUri!.includes("?") ? "&" : "?";
+      const destination = `${redirectUri}${separator}token=${encodeURIComponent(accessToken)}&state=${encodeURIComponent(state!)}`;
+      window.location.href = destination;
+    } catch {
+      setLoginError(
+        "Unable to connect to the authentication server. Please try again later."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex bg-background">
+      {/* Left Panel - SSO Branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-sidebar relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-pattern opacity-5" />
+        <div className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-sidebar-primary/20 blur-3xl" />
+        <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-sidebar-primary/10 blur-3xl" />
+
+        <div className="relative z-10 flex flex-col justify-center px-16">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sidebar-primary shadow-lg shadow-sidebar-primary/30">
+              <Shield className="h-8 w-8 text-sidebar-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-sidebar-foreground">
+                LGU-SSO
+              </h1>
+              <p className="text-sm font-medium text-sidebar-foreground/60 uppercase tracking-wider">
+                Single Sign-On
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <h2 className="text-4xl font-bold text-sidebar-foreground leading-tight">
+              Secure
+              <br />
+              <span className="text-sidebar-primary">Authentication</span>
+            </h2>
+            <p className="text-lg text-sidebar-foreground/70 max-w-md">
+              You are being signed in through the LGU Single Sign-On system.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Panel - Login Form / Status */}
+      <div className="flex w-full lg:w-1/2 items-center justify-center p-8">
+        <div className="w-full max-w-md">
+          {/* Mobile Logo */}
+          <div className="flex items-center gap-3 mb-8 lg:hidden">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
+              <Shield className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">LGU-SSO</h1>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                Single Sign-On
+              </p>
+            </div>
+          </div>
+
+          {/* Loading State */}
+          {validation.status === "loading" && (
+            <Card className="border-0 shadow-xl shadow-primary/5">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+                <p className="text-sm text-muted-foreground">
+                  Validating your request...
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Missing Params State */}
+          {validation.status === "missing-params" && (
+            <Card className="border-0 shadow-xl shadow-primary/5">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 mb-4">
+                  <AlertCircle className="h-6 w-6 text-destructive" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">
+                  Invalid Request
+                </h3>
+                <p className="text-sm text-muted-foreground text-center max-w-sm">
+                  Required parameters are missing. Please return to the
+                  application and try again.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Error State */}
+          {validation.status === "error" && (
+            <Card className="border-0 shadow-xl shadow-primary/5">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 mb-4">
+                  <AlertCircle className="h-6 w-6 text-destructive" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">
+                  Validation Failed
+                </h3>
+                <p className="text-sm text-muted-foreground text-center max-w-sm">
+                  {validation.message}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Login Form State */}
+          {validation.status === "validated" && (
+            <Card className="border-0 shadow-xl shadow-primary/5">
+              <CardHeader className="space-y-1 pb-6">
+                <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+                <CardDescription>
+                  Sign in to access{" "}
+                  <span className="font-semibold text-foreground">
+                    {validation.applicationName}
+                  </span>
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  {loginError && (
+                    <div
+                      role="alert"
+                      className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive"
+                    >
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      <span>{loginError}</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-sm font-medium">
+                      Email Address
+                    </Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10 h-11"
+                        required
+                        disabled={isSubmitting}
+                        autoComplete="email"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-sm font-medium">
+                      Password
+                    </Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10 h-11"
+                        required
+                        disabled={isSubmitting}
+                        autoComplete="current-password"
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full h-11 text-base font-semibold"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing in...
+                      </>
+                    ) : (
+                      "Sign in"
+                    )}
+                  </Button>
+                </form>
+
+                <div className="mt-6 text-center text-sm text-muted-foreground">
+                  <p>
+                    You will be redirected back to{" "}
+                    <span className="font-medium text-foreground">
+                      {validation.applicationName}
+                    </span>{" "}
+                    after signing in.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            &copy; {new Date().getFullYear()} Local Government Unit. All rights
+            reserved.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function SSOLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <SSOLoginContent />
+    </Suspense>
+  );
+}

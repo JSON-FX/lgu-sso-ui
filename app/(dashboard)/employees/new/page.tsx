@@ -53,15 +53,23 @@ export default function NewEmployeePage() {
     birthday: "",
     civil_status: "single",
     nationality: "Filipino",
-    region_code: "",
-    province_code: "",
-    city_code: "",
-    barangay_code: "",
+    region: "",
+    province: "",
+    city: "",
+    barangay: "",
+    house_number: "",
+    block_number: "",
+    building_floor: "",
     residence: "",
     office_id: undefined,
     position: "",
     date_employed: "",
   });
+
+  // Track selected codes for cascading dropdowns
+  const [selectedRegionCode, setSelectedRegionCode] = useState("");
+  const [selectedProvinceCode, setSelectedProvinceCode] = useState("");
+  const [selectedCityCode, setSelectedCityCode] = useState("");
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -70,6 +78,7 @@ export default function NewEmployeePage() {
   const [provinceOpen, setProvinceOpen] = useState(false);
   const [municipalityOpen, setMunicipalityOpen] = useState(false);
   const [barangayOpen, setBarangayOpen] = useState(false);
+  const [officeOpen, setOfficeOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -92,8 +101,11 @@ export default function NewEmployeePage() {
     loadData();
   }, []);
 
-  const handleRegionChange = async (code: string) => {
-    setFormData({ ...formData, region_code: code, province_code: "", city_code: "", barangay_code: "" });
+  const handleRegionChange = async (code: string, name: string) => {
+    setSelectedRegionCode(code);
+    setSelectedProvinceCode("");
+    setSelectedCityCode("");
+    setFormData({ ...formData, region: name, province: "", city: "", barangay: "" });
     setProvinces([]);
     setMunicipalities([]);
     setBarangays([]);
@@ -108,8 +120,10 @@ export default function NewEmployeePage() {
     }
   };
 
-  const handleProvinceChange = async (code: string) => {
-    setFormData({ ...formData, province_code: code, city_code: "", barangay_code: "" });
+  const handleProvinceChange = async (code: string, name: string) => {
+    setSelectedProvinceCode(code);
+    setSelectedCityCode("");
+    setFormData({ ...formData, province: name, city: "", barangay: "" });
     setMunicipalities([]);
     setBarangays([]);
 
@@ -123,8 +137,9 @@ export default function NewEmployeePage() {
     }
   };
 
-  const handleMunicipalityChange = async (code: string) => {
-    setFormData({ ...formData, city_code: code, barangay_code: "" });
+  const handleMunicipalityChange = async (code: string, name: string) => {
+    setSelectedCityCode(code);
+    setFormData({ ...formData, city: name, barangay: "" });
     setBarangays([]);
 
     if (code) {
@@ -176,7 +191,22 @@ export default function NewEmployeePage() {
 
     setIsSubmitting(true);
     try {
-      const response = await api.employees.create(formData);
+      // Convert empty strings to null for optional fields
+      const sanitizedData = {
+        ...formData,
+        region: formData.region || null,
+        province: formData.province || null,
+        city: formData.city || null,
+        barangay: formData.barangay || null,
+        middle_name: formData.middle_name || null,
+        suffix: formData.suffix || null,
+        house_number: formData.house_number || null,
+        block_number: formData.block_number || null,
+        building_floor: formData.building_floor || null,
+        office_id: formData.office_id || null,
+        date_employed: formData.date_employed || null,
+      };
+      const response = await api.employees.create(sanitizedData as CreateEmployeeData);
       toast.success("Employee created successfully");
       router.push(`/employees/${response.data.uuid}`);
     } catch (error) {
@@ -364,23 +394,48 @@ export default function NewEmployeePage() {
           <CardContent className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <Label>Office</Label>
-              <Select
-                value={formData.office_id?.toString() || ""}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, office_id: value ? parseInt(value) : undefined })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select office" />
-                </SelectTrigger>
-                <SelectContent>
-                  {offices.map((o) => (
-                    <SelectItem key={o.id} value={o.id.toString()}>
-                      {o.name} ({o.abbreviation})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={officeOpen} onOpenChange={setOfficeOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={officeOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    {formData.office_id
+                      ? offices.find((o) => o.id === formData.office_id)?.name
+                      : "Select office"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search office..." />
+                    <CommandList>
+                      <CommandEmpty>No office found.</CommandEmpty>
+                      <CommandGroup>
+                        {offices.map((o) => (
+                          <CommandItem
+                            key={o.id}
+                            value={`${o.name} ${o.abbreviation}`}
+                            onSelect={() => {
+                              setFormData({ ...formData, office_id: o.id });
+                              setOfficeOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={`mr-2 h-4 w-4 ${
+                                formData.office_id === o.id ? "opacity-100" : "opacity-0"
+                              }`}
+                            />
+                            {o.name} ({o.abbreviation})
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-2">
               <Label htmlFor="position">
@@ -428,9 +483,7 @@ export default function NewEmployeePage() {
                     aria-expanded={regionOpen}
                     className="w-full justify-between font-normal"
                   >
-                    {formData.region_code
-                      ? regions.find((r) => r.code === formData.region_code)?.name
-                      : "Select region"}
+                    {formData.region || "Select region"}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
@@ -445,13 +498,13 @@ export default function NewEmployeePage() {
                             key={r.code}
                             value={r.name}
                             onSelect={() => {
-                              handleRegionChange(r.code);
+                              handleRegionChange(r.code, r.name);
                               setRegionOpen(false);
                             }}
                           >
                             <Check
                               className={`mr-2 h-4 w-4 ${
-                                formData.region_code === r.code ? "opacity-100" : "opacity-0"
+                                selectedRegionCode === r.code ? "opacity-100" : "opacity-0"
                               }`}
                             />
                             {r.name}
@@ -474,11 +527,9 @@ export default function NewEmployeePage() {
                     role="combobox"
                     aria-expanded={provinceOpen}
                     className="w-full justify-between font-normal"
-                    disabled={!formData.region_code}
+                    disabled={!selectedRegionCode}
                   >
-                    {formData.province_code
-                      ? provinces.find((p) => p.code === formData.province_code)?.name
-                      : "Select province"}
+                    {formData.province || "Select province"}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
@@ -493,13 +544,13 @@ export default function NewEmployeePage() {
                             key={p.code}
                             value={p.name}
                             onSelect={() => {
-                              handleProvinceChange(p.code);
+                              handleProvinceChange(p.code, p.name);
                               setProvinceOpen(false);
                             }}
                           >
                             <Check
                               className={`mr-2 h-4 w-4 ${
-                                formData.province_code === p.code ? "opacity-100" : "opacity-0"
+                                selectedProvinceCode === p.code ? "opacity-100" : "opacity-0"
                               }`}
                             />
                             {p.name}
@@ -522,11 +573,9 @@ export default function NewEmployeePage() {
                     role="combobox"
                     aria-expanded={municipalityOpen}
                     className="w-full justify-between font-normal"
-                    disabled={!formData.province_code}
+                    disabled={!selectedProvinceCode}
                   >
-                    {formData.city_code
-                      ? municipalities.find((m) => m.code === formData.city_code)?.name
-                      : "Select city/municipality"}
+                    {formData.city || "Select city/municipality"}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
@@ -541,13 +590,13 @@ export default function NewEmployeePage() {
                             key={m.code}
                             value={m.name}
                             onSelect={() => {
-                              handleMunicipalityChange(m.code);
+                              handleMunicipalityChange(m.code, m.name);
                               setMunicipalityOpen(false);
                             }}
                           >
                             <Check
                               className={`mr-2 h-4 w-4 ${
-                                formData.city_code === m.code ? "opacity-100" : "opacity-0"
+                                selectedCityCode === m.code ? "opacity-100" : "opacity-0"
                               }`}
                             />
                             {m.name}
@@ -570,11 +619,9 @@ export default function NewEmployeePage() {
                     role="combobox"
                     aria-expanded={barangayOpen}
                     className="w-full justify-between font-normal"
-                    disabled={!formData.city_code}
+                    disabled={!selectedCityCode}
                   >
-                    {formData.barangay_code
-                      ? barangays.find((b) => b.code === formData.barangay_code)?.name
-                      : "Select barangay"}
+                    {formData.barangay || "Select barangay"}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
@@ -589,13 +636,13 @@ export default function NewEmployeePage() {
                             key={b.code}
                             value={b.name}
                             onSelect={() => {
-                              setFormData({ ...formData, barangay_code: b.code });
+                              setFormData({ ...formData, barangay: b.name });
                               setBarangayOpen(false);
                             }}
                           >
                             <Check
                               className={`mr-2 h-4 w-4 ${
-                                formData.barangay_code === b.code ? "opacity-100" : "opacity-0"
+                                formData.barangay === b.name ? "opacity-100" : "opacity-0"
                               }`}
                             />
                             {b.name}
@@ -606,6 +653,39 @@ export default function NewEmployeePage() {
                   </Command>
                 </PopoverContent>
               </Popover>
+            </div>
+
+            {/* House Number */}
+            <div className="space-y-2">
+              <Label htmlFor="house_number">House Number</Label>
+              <Input
+                id="house_number"
+                value={formData.house_number || ""}
+                onChange={(e) => setFormData({ ...formData, house_number: e.target.value })}
+                placeholder="e.g., 123"
+              />
+            </div>
+
+            {/* Block Number */}
+            <div className="space-y-2">
+              <Label htmlFor="block_number">Block Number</Label>
+              <Input
+                id="block_number"
+                value={formData.block_number || ""}
+                onChange={(e) => setFormData({ ...formData, block_number: e.target.value })}
+                placeholder="e.g., Block 5"
+              />
+            </div>
+
+            {/* Building/Floor */}
+            <div className="space-y-2">
+              <Label htmlFor="building_floor">Building/Floor</Label>
+              <Input
+                id="building_floor"
+                value={formData.building_floor || ""}
+                onChange={(e) => setFormData({ ...formData, building_floor: e.target.value })}
+                placeholder="e.g., 3rd Floor, Unit 201"
+              />
             </div>
 
             {/* Street Address */}
@@ -619,7 +699,7 @@ export default function NewEmployeePage() {
                 onChange={(e) => setFormData({ ...formData, residence: e.target.value })}
                 className={errors.residence ? "border-destructive" : ""}
                 rows={2}
-                placeholder="House number, street name, building, etc."
+                placeholder="Street name, subdivision, etc."
               />
               {errors.residence && <p className="text-xs text-destructive">{errors.residence}</p>}
             </div>

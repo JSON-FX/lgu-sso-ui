@@ -29,7 +29,7 @@ export function setAuthToken(token: string): void {
   Cookies.set("auth_token", token, {
     expires: 30, // 30 days
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: process.env.NEXT_PUBLIC_SECURE_COOKIES === "true",
   });
 }
 

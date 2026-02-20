@@ -192,9 +192,6 @@ export const mockEmployeeApi = {
       throw new Error("Email already exists.");
     }
 
-    const province = data.province_code ? mockProvinces.find((p) => p.code === data.province_code) : null;
-    const city = data.province_code && data.city_code ? mockCities[data.province_code]?.find((c) => c.code === data.city_code) : null;
-    const barangay = data.city_code && data.barangay_code ? mockBarangays[data.city_code]?.find((b) => b.code === data.barangay_code) : null;
     const office = data.office_id ? mockOffices.find((o) => o.id === data.office_id) : null;
 
     const newEmployee: Employee = {
@@ -221,9 +218,10 @@ export const mockEmployeeApi = {
       block_number: data.block_number || null,
       building_floor: data.building_floor || null,
       house_number: data.house_number || null,
-      province: province || null,
-      city: city || null,
-      barangay: barangay || null,
+      region: data.region || null,
+      province: data.province || null,
+      city: data.city || null,
+      barangay: data.barangay || null,
       office: office || null,
       position: data.position || null,
       date_employed: data.date_employed || null,

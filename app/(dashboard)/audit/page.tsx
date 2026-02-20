@@ -112,6 +112,7 @@ export default function AuditLogsPage() {
 
   // Pagination state
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
 
@@ -133,7 +134,7 @@ export default function AuditLogsPage() {
     setIsLoading(true);
     try {
       const [logsRes, employeesRes, appsRes] = await Promise.all([
-        api.audit.list({ ...filters, page, per_page: 15 }),
+        api.audit.list({ ...filters, page, per_page: perPage }),
         api.employees.list(1, 100),
         api.applications.list(),
       ]);
@@ -152,7 +153,7 @@ export default function AuditLogsPage() {
 
   useEffect(() => {
     loadData();
-  }, [page, filters]);
+  }, [page, perPage, filters]);
 
   const handleFilterChange = (key: keyof AuditLogFilters, value: string | undefined) => {
     setFilters((prev) => ({
@@ -516,7 +517,7 @@ export default function AuditLogsPage() {
                         {log.employee ? (
                           <div className="flex items-center gap-2">
                             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                              {log.employee.initials}
+                              {log.employee.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                             </div>
                             <span className="text-sm">{log.employee.full_name}</span>
                           </div>
@@ -533,7 +534,9 @@ export default function AuditLogsPage() {
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground line-clamp-1">
-                          {log.details || "-"}
+                          {log.metadata && Object.keys(log.metadata).length > 0
+                            ? JSON.stringify(log.metadata)
+                            : "-"}
                         </span>
                       </TableCell>
                     </TableRow>
@@ -544,11 +547,34 @@ export default function AuditLogsPage() {
           </Table>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between">
+          <div className="mt-4 flex items-center justify-between">
+            <div className="flex items-center gap-4">
               <p className="text-sm text-muted-foreground">
-                Showing {(page - 1) * 15 + 1} to {Math.min(page * 15, total)} of {total} entries
+                Showing {total > 0 ? (page - 1) * perPage + 1 : 0} to {Math.min(page * perPage, total)} of {total} entries
               </p>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Show</span>
+                <Select
+                  value={perPage.toString()}
+                  onValueChange={(value) => {
+                    setPerPage(Number(value));
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[70px] h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span className="text-sm text-muted-foreground">per page</span>
+              </div>
+            </div>
+            {totalPages > 1 && (
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -594,8 +620,8 @@ export default function AuditLogsPage() {
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

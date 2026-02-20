@@ -78,17 +78,21 @@ export default function EmployeeDetailPage() {
   const [barangays, setBarangays] = useState<PSGCBarangay[]>([]);
   const [offices, setOffices] = useState<Office[]>([]);
 
-  // Location form state
+  // Location form state - track codes for cascading and names for display/submit
   const [regionCode, setRegionCode] = useState<string>("");
   const [provinceCode, setProvinceCode] = useState<string>("");
   const [municipalityCode, setMunicipalityCode] = useState<string>("");
-  const [barangayCode, setBarangayCode] = useState<string>("");
+  const [regionName, setRegionName] = useState<string>("");
+  const [provinceName, setProvinceName] = useState<string>("");
+  const [cityName, setCityName] = useState<string>("");
+  const [barangayName, setBarangayName] = useState<string>("");
 
   // Combobox open states
   const [regionOpen, setRegionOpen] = useState(false);
   const [provinceOpen, setProvinceOpen] = useState(false);
   const [municipalityOpen, setMunicipalityOpen] = useState(false);
   const [barangayOpen, setBarangayOpen] = useState(false);
+  const [officeOpen, setOfficeOpen] = useState(false);
 
   useEffect(() => {
     async function loadEmployee() {
@@ -120,6 +124,9 @@ export default function EmployeeDetailPage() {
           birthday: employeeRes.data.birthday,
           civil_status: employeeRes.data.civil_status,
           nationality: employeeRes.data.nationality,
+          house_number: employeeRes.data.house_number || "",
+          block_number: employeeRes.data.block_number || "",
+          building_floor: employeeRes.data.building_floor || "",
           residence: employeeRes.data.residence,
           is_active: employeeRes.data.is_active,
           office_id: employeeRes.data.office?.id,
@@ -128,9 +135,11 @@ export default function EmployeeDetailPage() {
           date_terminated: employeeRes.data.date_terminated || "",
         });
 
-        // Note: existing employee data may have province/city/barangay from old structure
-        // For now, we don't pre-populate since we're switching to the new PSGC structure
-        // The user will need to re-select location data
+        // Populate location names from employee data (stored as strings)
+        setRegionName(employeeRes.data.region || "");
+        setProvinceName(employeeRes.data.province || "");
+        setCityName(employeeRes.data.city || "");
+        setBarangayName(employeeRes.data.barangay || "");
       } catch (error) {
         console.error("Failed to load employee:", error);
         toast.error("Failed to load employee details");
@@ -142,11 +151,14 @@ export default function EmployeeDetailPage() {
     loadEmployee();
   }, [uuid]);
 
-  const handleRegionChange = async (code: string) => {
+  const handleRegionChange = async (code: string, name: string) => {
     setRegionCode(code);
+    setRegionName(name);
     setProvinceCode("");
+    setProvinceName("");
     setMunicipalityCode("");
-    setBarangayCode("");
+    setCityName("");
+    setBarangayName("");
     setProvinces([]);
     setMunicipalities([]);
     setBarangays([]);
@@ -161,10 +173,12 @@ export default function EmployeeDetailPage() {
     }
   };
 
-  const handleProvinceChange = async (code: string) => {
+  const handleProvinceChange = async (code: string, name: string) => {
     setProvinceCode(code);
+    setProvinceName(name);
     setMunicipalityCode("");
-    setBarangayCode("");
+    setCityName("");
+    setBarangayName("");
     setMunicipalities([]);
     setBarangays([]);
 
@@ -178,9 +192,10 @@ export default function EmployeeDetailPage() {
     }
   };
 
-  const handleMunicipalityChange = async (code: string) => {
+  const handleMunicipalityChange = async (code: string, name: string) => {
     setMunicipalityCode(code);
-    setBarangayCode("");
+    setCityName(name);
+    setBarangayName("");
     setBarangays([]);
 
     if (code) {
@@ -196,14 +211,23 @@ export default function EmployeeDetailPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      // Convert empty strings to null for optional fields
       const updateData = {
         ...formData,
-        region_code: regionCode || undefined,
-        province_code: provinceCode || undefined,
-        city_code: municipalityCode || undefined,
-        barangay_code: barangayCode || undefined,
+        region: regionName || null,
+        province: provinceName || null,
+        city: cityName || null,
+        barangay: barangayName || null,
+        middle_name: formData.middle_name || null,
+        suffix: formData.suffix || null,
+        house_number: formData.house_number || null,
+        block_number: formData.block_number || null,
+        building_floor: formData.building_floor || null,
+        office_id: formData.office_id || null,
+        date_employed: formData.date_employed || null,
+        date_terminated: formData.date_terminated || null,
       };
-      const response = await api.employees.update(uuid, updateData);
+      const response = await api.employees.update(uuid, updateData as UpdateEmployeeData);
       setEmployee(response.data);
       toast.success("Employee updated successfully");
     } catch (error) {
@@ -470,23 +494,48 @@ export default function EmployeeDetailPage() {
             <CardContent className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Office</Label>
-                <Select
-                  value={formData.office_id?.toString() || ""}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, office_id: value ? parseInt(value) : undefined })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select office" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {offices.map((o) => (
-                      <SelectItem key={o.id} value={o.id.toString()}>
-                        {o.name} ({o.abbreviation})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={officeOpen} onOpenChange={setOfficeOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={officeOpen}
+                      className="w-full justify-between font-normal"
+                    >
+                      {formData.office_id
+                        ? offices.find((o) => o.id === formData.office_id)?.name
+                        : "Select office"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search office..." />
+                      <CommandList>
+                        <CommandEmpty>No office found.</CommandEmpty>
+                        <CommandGroup>
+                          {offices.map((o) => (
+                            <CommandItem
+                              key={o.id}
+                              value={`${o.name} ${o.abbreviation}`}
+                              onSelect={() => {
+                                setFormData({ ...formData, office_id: o.id });
+                                setOfficeOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={`mr-2 h-4 w-4 ${
+                                  formData.office_id === o.id ? "opacity-100" : "opacity-0"
+                                }`}
+                              />
+                              {o.name} ({o.abbreviation})
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="position">Position</Label>
@@ -538,9 +587,7 @@ export default function EmployeeDetailPage() {
                       aria-expanded={regionOpen}
                       className="w-full justify-between font-normal"
                     >
-                      {regionCode
-                        ? regions.find((r) => r.code === regionCode)?.name
-                        : "Select region"}
+                      {regionName || "Select region"}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
@@ -555,7 +602,7 @@ export default function EmployeeDetailPage() {
                               key={r.code}
                               value={r.name}
                               onSelect={() => {
-                                handleRegionChange(r.code);
+                                handleRegionChange(r.code, r.name);
                                 setRegionOpen(false);
                               }}
                             >
@@ -586,9 +633,7 @@ export default function EmployeeDetailPage() {
                       className="w-full justify-between font-normal"
                       disabled={!regionCode}
                     >
-                      {provinceCode
-                        ? provinces.find((p) => p.code === provinceCode)?.name
-                        : "Select province"}
+                      {provinceName || "Select province"}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
@@ -603,7 +648,7 @@ export default function EmployeeDetailPage() {
                               key={p.code}
                               value={p.name}
                               onSelect={() => {
-                                handleProvinceChange(p.code);
+                                handleProvinceChange(p.code, p.name);
                                 setProvinceOpen(false);
                               }}
                             >
@@ -634,9 +679,7 @@ export default function EmployeeDetailPage() {
                       className="w-full justify-between font-normal"
                       disabled={!provinceCode}
                     >
-                      {municipalityCode
-                        ? municipalities.find((m) => m.code === municipalityCode)?.name
-                        : "Select city/municipality"}
+                      {cityName || "Select city/municipality"}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
@@ -651,7 +694,7 @@ export default function EmployeeDetailPage() {
                               key={m.code}
                               value={m.name}
                               onSelect={() => {
-                                handleMunicipalityChange(m.code);
+                                handleMunicipalityChange(m.code, m.name);
                                 setMunicipalityOpen(false);
                               }}
                             >
@@ -682,9 +725,7 @@ export default function EmployeeDetailPage() {
                       className="w-full justify-between font-normal"
                       disabled={!municipalityCode}
                     >
-                      {barangayCode
-                        ? barangays.find((b) => b.code === barangayCode)?.name
-                        : "Select barangay"}
+                      {barangayName || "Select barangay"}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
@@ -699,13 +740,13 @@ export default function EmployeeDetailPage() {
                               key={b.code}
                               value={b.name}
                               onSelect={() => {
-                                setBarangayCode(b.code);
+                                setBarangayName(b.name);
                                 setBarangayOpen(false);
                               }}
                             >
                               <Check
                                 className={`mr-2 h-4 w-4 ${
-                                  barangayCode === b.code ? "opacity-100" : "opacity-0"
+                                  barangayName === b.name ? "opacity-100" : "opacity-0"
                                 }`}
                               />
                               {b.name}
@@ -716,6 +757,39 @@ export default function EmployeeDetailPage() {
                     </Command>
                   </PopoverContent>
                 </Popover>
+              </div>
+
+              {/* House Number */}
+              <div className="space-y-2">
+                <Label htmlFor="house_number">House Number</Label>
+                <Input
+                  id="house_number"
+                  value={formData.house_number || ""}
+                  onChange={(e) => setFormData({ ...formData, house_number: e.target.value })}
+                  placeholder="e.g., 123"
+                />
+              </div>
+
+              {/* Block Number */}
+              <div className="space-y-2">
+                <Label htmlFor="block_number">Block Number</Label>
+                <Input
+                  id="block_number"
+                  value={formData.block_number || ""}
+                  onChange={(e) => setFormData({ ...formData, block_number: e.target.value })}
+                  placeholder="e.g., Block 5"
+                />
+              </div>
+
+              {/* Building/Floor */}
+              <div className="space-y-2">
+                <Label htmlFor="building_floor">Building/Floor</Label>
+                <Input
+                  id="building_floor"
+                  value={formData.building_floor || ""}
+                  onChange={(e) => setFormData({ ...formData, building_floor: e.target.value })}
+                  placeholder="e.g., 3rd Floor, Unit 201"
+                />
               </div>
 
               {/* Street Address */}

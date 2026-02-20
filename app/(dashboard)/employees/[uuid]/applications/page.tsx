@@ -78,7 +78,7 @@ export default function EmployeeApplicationsPage() {
       ]);
       setEmployee(employeeRes.data);
       setAllApplications(appsRes.data);
-      setEmployeeApps(employeeAppsRes.data);
+      setEmployeeApps(employeeAppsRes.data || []);
     } catch (error) {
       console.error("Failed to load data:", error);
       toast.error("Failed to load data");

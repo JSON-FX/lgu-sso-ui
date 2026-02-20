@@ -1,4 +1,4 @@
-import { Employee } from "./employee";
+import { Employee, EmployeeApplication } from "./employee";
 
 export interface LoginCredentials {
   email: string;
@@ -12,11 +12,7 @@ export interface LoginResponse {
 }
 
 export interface AuthUser extends Employee {
-  applications: {
-    uuid: string;
-    name: string;
-    role: string;
-  }[];
+  applications: EmployeeApplication[];
 }
 
 export interface MeResponse {

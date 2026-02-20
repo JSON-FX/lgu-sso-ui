@@ -522,13 +522,13 @@ export default function ApplicationDetailPage() {
                 <div>
                   <dt className="text-sm font-medium text-muted-foreground">Created</dt>
                   <dd className="text-sm">
-                    {format(new Date(application.created_at), "MMMM d, yyyy 'at' h:mm a")}
+                    {application.created_at ? format(new Date(application.created_at), "MMMM d, yyyy 'at' h:mm a") : "N/A"}
                   </dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-muted-foreground">Last Updated</dt>
                   <dd className="text-sm">
-                    {format(new Date(application.updated_at), "MMMM d, yyyy 'at' h:mm a")}
+                    {application.updated_at ? format(new Date(application.updated_at), "MMMM d, yyyy 'at' h:mm a") : "N/A"}
                   </dd>
                 </div>
                 <div>
