@@ -22,6 +22,7 @@ type ValidationState =
   | { status: "loading" }
   | { status: "missing-params" }
   | { status: "error"; message: string }
+  | { status: "checking-session"; applicationName: string }
   | { status: "validated"; applicationName: string };
 
 function SSOLoginContent() {
@@ -50,6 +51,7 @@ function SSOLoginContent() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({
             client_id: clientId,
             redirect_uri: redirectUri,
@@ -66,10 +68,34 @@ function SSOLoginContent() {
       }
 
       const data = await response.json();
-      setValidation({
-        status: "validated",
-        applicationName: data.application_name || data.app_name || "the application",
-      });
+      const applicationName =
+        data.application_name || data.app_name || "the application";
+
+      setValidation({ status: "checking-session", applicationName });
+
+      // Check for existing SSO session cookie
+      try {
+        const sessionRes = await fetch(
+          `${API_BASE_URL}/sso/session-check`,
+          { credentials: "include" }
+        );
+
+        if (sessionRes.ok) {
+          const sessionData = await sessionRes.json();
+
+          if (sessionData.authenticated && sessionData.access_token) {
+            toast.success("Session found. Redirecting...");
+            const separator = redirectUri!.includes("?") ? "&" : "?";
+            const destination = `${redirectUri}${separator}token=${encodeURIComponent(sessionData.access_token)}&state=${encodeURIComponent(state!)}`;
+            window.location.href = destination;
+            return;
+          }
+        }
+      } catch {
+        // Session check failed — fall through to show login form
+      }
+
+      setValidation({ status: "validated", applicationName });
     } catch {
       setValidation({
         status: "error",
@@ -92,6 +118,7 @@ function SSOLoginContent() {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
 
@@ -177,13 +204,16 @@ function SSOLoginContent() {
             </div>
           </div>
 
-          {/* Loading State */}
-          {validation.status === "loading" && (
+          {/* Loading / Checking Session States */}
+          {(validation.status === "loading" ||
+            validation.status === "checking-session") && (
             <Card className="border-0 shadow-xl shadow-primary/5">
               <CardContent className="flex flex-col items-center justify-center py-16">
                 <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
                 <p className="text-sm text-muted-foreground">
-                  Validating your request...
+                  {validation.status === "checking-session"
+                    ? "Checking existing session..."
+                    : "Validating your request..."}
                 </p>
               </CardContent>
             </Card>
