@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,11 +13,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Shield, Mail, Lock, Loader2, AlertCircle } from "lucide-react";
+import { Shield, User, Lock, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://lgu-sso.test/api/v1";
+import { api, ssoApi } from "@/lib/api";
 
 type ValidationState =
   | { status: "loading" }
@@ -34,7 +33,7 @@ function SSOLoginContent() {
   const [validation, setValidation] = useState<ValidationState>({
     status: "loading",
   });
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState("");
@@ -46,28 +45,11 @@ function SSOLoginContent() {
     }
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/sso/validate-redirect`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            client_id: clientId,
-            redirect_uri: redirectUri,
-          }),
-        }
-      );
+      const data = await ssoApi.validateRedirect({
+        client_id: clientId,
+        redirect_uri: redirectUri,
+      });
 
-      if (!response.ok) {
-        const data = await response.json().catch(() => null);
-        const message =
-          data?.message || "The redirect request could not be validated.";
-        setValidation({ status: "error", message });
-        return;
-      }
-
-      const data = await response.json();
       const applicationName =
         data.application_name || data.app_name || "the application";
 
@@ -75,32 +57,28 @@ function SSOLoginContent() {
 
       // Check for existing SSO session cookie
       try {
-        const sessionRes = await fetch(
-          `${API_BASE_URL}/sso/session-check`,
-          { credentials: "include" }
-        );
+        const sessionData = await ssoApi.sessionCheck();
 
-        if (sessionRes.ok) {
-          const sessionData = await sessionRes.json();
-
-          if (sessionData.authenticated && sessionData.access_token) {
-            toast.success("Session found. Redirecting...");
-            const separator = redirectUri!.includes("?") ? "&" : "?";
-            const destination = `${redirectUri}${separator}token=${encodeURIComponent(sessionData.access_token)}&state=${encodeURIComponent(state!)}`;
-            window.location.href = destination;
-            return;
-          }
+        if (sessionData.authenticated && sessionData.access_token) {
+          toast.success("Session found. Redirecting...");
+          const separator = redirectUri!.includes("?") ? "&" : "?";
+          const destination = `${redirectUri}${separator}token=${encodeURIComponent(sessionData.access_token)}&state=${encodeURIComponent(state!)}`;
+          window.location.href = destination;
+          return;
         }
       } catch {
         // Session check failed — fall through to show login form
       }
 
       setValidation({ status: "validated", applicationName });
-    } catch {
+    } catch (err) {
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : "The redirect request could not be validated.";
       setValidation({
         status: "error",
-        message:
-          "Unable to connect to the authentication server. Please try again later.",
+        message,
       });
     }
   }, [redirectUri, clientId, state]);
@@ -115,38 +93,30 @@ function SSOLoginContent() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, password }),
-      });
+      const data = await api.auth.login({ username, password });
 
-      if (!response.ok) {
-        const data = await response.json().catch(() => null);
-        const message =
-          data?.message || "Invalid email or password. Please try again.";
-        setLoginError(message);
+      if (!data.access_token) {
+        setLoginError("Authentication succeeded but no token was returned.");
         return;
       }
 
-      const data = await response.json();
-      const accessToken = data.access_token || data.token;
-
-      if (!accessToken) {
-        setLoginError("Authentication succeeded but no token was returned.");
+      // Check if user must change password before proceeding
+      if (data.must_change_password) {
+        window.location.href = `/setup-account?redirect_uri=${encodeURIComponent(redirectUri!)}&state=${encodeURIComponent(state!)}`;
         return;
       }
 
       toast.success("Authentication successful. Redirecting...");
 
       const separator = redirectUri!.includes("?") ? "&" : "?";
-      const destination = `${redirectUri}${separator}token=${encodeURIComponent(accessToken)}&state=${encodeURIComponent(state!)}`;
+      const destination = `${redirectUri}${separator}token=${encodeURIComponent(data.access_token)}&state=${encodeURIComponent(state!)}`;
       window.location.href = destination;
-    } catch {
-      setLoginError(
-        "Unable to connect to the authentication server. Please try again later."
-      );
+    } catch (err) {
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : "Invalid username or password. Please try again.";
+      setLoginError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -279,21 +249,21 @@ function SSOLoginContent() {
                   )}
 
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-sm font-medium">
-                      Email Address
+                    <Label htmlFor="username" className="text-sm font-medium">
+                      Username
                     </Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
-                        id="email"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        id="username"
+                        type="text"
+                        placeholder="e.g., j.alanano"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
                         className="pl-10 h-11"
                         required
                         disabled={isSubmitting}
-                        autoComplete="email"
+                        autoComplete="username"
                       />
                     </div>
                   </div>
@@ -343,6 +313,13 @@ function SSOLoginContent() {
                     after signing in.
                   </p>
                 </div>
+
+                <p className="text-sm text-muted-foreground text-center mt-4">
+                  Don&apos;t have an account?{" "}
+                  <Link href={`/register?redirect_sso=true&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri!)}&state=${state}`} className="text-primary hover:underline">
+                    Register here
+                  </Link>
+                </p>
               </CardContent>
             </Card>
           )}
