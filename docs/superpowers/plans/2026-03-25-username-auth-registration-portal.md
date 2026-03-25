@@ -717,8 +717,17 @@ When "Edit Profile" is clicked:
   - Nationality: `<Input>`
   - Position: `<Input>`
   - Residence: `<Textarea>`
-  - Address fields: Cascading PSGC dropdowns (Region → Province → City → Barangay)
-    - Reuse the existing PSGC combobox pattern from `app/(dashboard)/employees/new/page.tsx`
+  - Address fields: Cascading PSGC dropdowns (Region → Province → City/Municipality → Barangay)
+    - Reuse the exact PSGC combobox pattern from `app/(dashboard)/employees/new/page.tsx`
+    - Uses `psgcApi` from `lib/api/psgc.ts`: `getRegions()`, `getProvinces(regionCode)`, `getMunicipalities(provinceCode)`, `getBarangays(municipalityCode)`
+    - Each dropdown uses Popover + Command (shadcn) for searchable select
+    - Cascade: Region selection loads Provinces, Province loads Cities/Municipalities, City loads Barangays
+    - Track selected codes: `selectedRegionCode`, `selectedProvinceCode`, `selectedCityCode`
+    - Store names in form data (not codes): `region`, `province`, `city`, `barangay`
+    - Disable child dropdowns until parent is selected
+    - Load regions on edit mode mount via `psgcApi.getRegions()`
+    - When changing a parent, clear all child selections and lists
+    - **Note:** Currently uses plain text inputs as placeholder. This step replaces them with the PSGC cascading dropdowns during the full backend integration build.
 - "Save" and "Cancel" buttons replace "Edit Profile"
 
 - [ ] **Step 3: Add save handler**
