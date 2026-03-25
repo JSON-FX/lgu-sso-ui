@@ -56,6 +56,7 @@ let employees = [...mockEmployees];
 let applications = [...mockApplications];
 let auditLogs = [...mockAuditLogs];
 let currentToken: string | null = null;
+let currentLoggedInEmployee: Employee | null = null;
 
 // ============================================
 // AUTH ENDPOINTS
@@ -73,6 +74,7 @@ export const mockAuthApi = {
       }
 
       currentToken = `mock-jwt-token-${Date.now()}`;
+      currentLoggedInEmployee = employee;
       return {
         access_token: currentToken,
         token_type: "bearer",
@@ -88,6 +90,7 @@ export const mockAuthApi = {
     const employee = employees.find((e) => e.username === username);
     if (employee) {
       currentToken = `mock-jwt-token-${Date.now()}`;
+      currentLoggedInEmployee = employee;
       return {
         access_token: currentToken,
         token_type: "bearer",
@@ -175,13 +178,17 @@ export const mockAuthApi = {
       throw new Error("New password is required.");
     }
 
-    // Find the current user in the employees array and set must_change_password to false
-    const currentEmployee = employees.find((e) => e.uuid === mockCurrentUser.uuid);
-    if (currentEmployee) {
-      currentEmployee.must_change_password = false;
+    // Update the logged-in employee's must_change_password flag
+    if (currentLoggedInEmployee) {
+      currentLoggedInEmployee.must_change_password = false;
+      const emp = employees.find((e) => e.uuid === currentLoggedInEmployee!.uuid);
+      if (emp) emp.must_change_password = false;
+    } else {
+      // Fallback to mockCurrentUser
+      const currentEmployee = employees.find((e) => e.uuid === mockCurrentUser.uuid);
+      if (currentEmployee) currentEmployee.must_change_password = false;
+      (mockCurrentUser as AuthUser & { must_change_password: boolean }).must_change_password = false;
     }
-    // Also update mockCurrentUser directly
-    (mockCurrentUser as AuthUser & { must_change_password: boolean }).must_change_password = false;
 
     return { message: "Password changed successfully" };
   },
@@ -203,6 +210,16 @@ export const mockAuthApi = {
 
     if (!currentToken) {
       throw new Error("Unauthenticated.");
+    }
+
+    // Return the actual logged-in employee, not always the default admin
+    if (currentLoggedInEmployee) {
+      return {
+        data: {
+          ...currentLoggedInEmployee,
+          applications: currentLoggedInEmployee.applications || mockCurrentUser.applications,
+        } as AuthUser,
+      };
     }
 
     return { data: mockCurrentUser };
@@ -826,22 +843,24 @@ export const mockSsoApi = {
 export const mockPortalApi = {
   async getProfile(): Promise<Employee> {
     await delay(300);
-    return mockCurrentUser as unknown as Employee;
+    const user = currentLoggedInEmployee || mockCurrentUser;
+    return user as unknown as Employee;
   },
 
   async updateProfile(data: UpdatePortalProfileData): Promise<Employee> {
     await delay(400);
 
-    // Merge data into mockCurrentUser
-    Object.assign(mockCurrentUser, data);
-    (mockCurrentUser as AuthUser).updated_at = new Date().toISOString();
+    const user = currentLoggedInEmployee || mockCurrentUser;
+    Object.assign(user, data);
+    (user as Employee).updated_at = new Date().toISOString();
 
-    return mockCurrentUser as unknown as Employee;
+    return user as unknown as Employee;
   },
 
   async getApplications(): Promise<EmployeeApplication[]> {
     await delay(300);
-    return mockCurrentUser.applications || [];
+    const user = currentLoggedInEmployee || mockCurrentUser;
+    return (user as unknown as AuthUser).applications || [];
   },
 };
 
