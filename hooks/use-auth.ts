@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { AuthUser } from "@/types";
+import { AuthUser, RegisterData, RegisterResponse } from "@/types";
 import { api } from "@/lib/api";
 
 interface AuthState {
@@ -11,12 +11,16 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
   isSuperAdmin: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  mustChangePassword: boolean;
+  sessionPassword: string | null;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  register: (data: RegisterData) => Promise<RegisterResponse>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
-function isSuperAdmin(user: AuthUser): boolean {
+function checkIsSuperAdmin(user: AuthUser): boolean {
   return user.applications?.some((app) => app.role === "super_administrator") ?? false;
 }
 
@@ -28,9 +32,11 @@ export const useAuth = create<AuthState>()(
       isLoading: true,
       isAuthenticated: false,
       isSuperAdmin: false,
+      mustChangePassword: false,
+      sessionPassword: null,
 
-      login: async (email: string, password: string) => {
-        const response = await api.auth.login(email, password);
+      login: async (username: string, password: string) => {
+        const response = await api.auth.login({ username, password });
 
         // Set token in API layer to make authenticated requests
         api.auth.setToken(response.access_token);
@@ -38,18 +44,15 @@ export const useAuth = create<AuthState>()(
         // Fetch full user data including applications from /auth/me
         const meResponse = await api.auth.me();
         const user = meResponse.data as AuthUser;
-        const superAdmin = isSuperAdmin(user);
-
-        if (!superAdmin) {
-          await api.auth.logout();
-          throw new Error("Access denied. Super administrator role required.");
-        }
+        const isSuperAdmin = checkIsSuperAdmin(user);
 
         set({
           user,
           token: response.access_token,
           isAuthenticated: true,
-          isSuperAdmin: superAdmin,
+          isSuperAdmin,
+          mustChangePassword: user.must_change_password,
+          sessionPassword: password,
           isLoading: false,
         });
       },
@@ -63,6 +66,8 @@ export const useAuth = create<AuthState>()(
             token: null,
             isAuthenticated: false,
             isSuperAdmin: false,
+            mustChangePassword: false,
+            sessionPassword: null,
             isLoading: false,
           });
         }
@@ -82,16 +87,13 @@ export const useAuth = create<AuthState>()(
           const response = await api.auth.me();
           const user = response.data;
 
-          if (user && isSuperAdmin(user)) {
-            set({
-              user,
-              isAuthenticated: true,
-              isSuperAdmin: true,
-              isLoading: false,
-            });
-          } else {
-            await get().logout();
-          }
+          set({
+            user,
+            isAuthenticated: true,
+            isSuperAdmin: checkIsSuperAdmin(user),
+            mustChangePassword: user.must_change_password,
+            isLoading: false,
+          });
         } catch {
           set({
             user: null,
@@ -100,6 +102,15 @@ export const useAuth = create<AuthState>()(
             isAuthenticated: false,
           });
         }
+      },
+
+      register: async (data: RegisterData): Promise<RegisterResponse> => {
+        return api.auth.register(data);
+      },
+
+      changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
+        await api.auth.changePassword({ current_password: currentPassword, new_password: newPassword });
+        set({ mustChangePassword: false, sessionPassword: null });
       },
     }),
     {
