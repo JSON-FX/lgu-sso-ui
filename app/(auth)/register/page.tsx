@@ -341,7 +341,7 @@ function RegisterContent() {
                       Your default password is your first initial + full last
                       name (e.g.,{" "}
                       <span className="font-mono font-medium text-foreground">
-                        jalanano
+                        jdoe
                       </span>
                       )
                     </p>

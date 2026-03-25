@@ -257,7 +257,7 @@ function SSOLoginContent() {
                       <Input
                         id="username"
                         type="text"
-                        placeholder="e.g., j.alanano"
+                        placeholder="e.g., j.doe"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         className="pl-10 h-11"
