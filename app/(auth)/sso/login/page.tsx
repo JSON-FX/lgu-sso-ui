@@ -51,7 +51,7 @@ function SSOLoginContent() {
       });
 
       const applicationName =
-        data.application_name || data.app_name || "the application";
+        data.application?.name || "the application";
 
       setValidation({ status: "checking-session", applicationName });
 
@@ -59,10 +59,10 @@ function SSOLoginContent() {
       try {
         const sessionData = await ssoApi.sessionCheck();
 
-        if (sessionData.authenticated && sessionData.access_token) {
+        if (sessionData.authenticated && sessionData.token) {
           toast.success("Session found. Redirecting...");
           const separator = redirectUri!.includes("?") ? "&" : "?";
-          const destination = `${redirectUri}${separator}token=${encodeURIComponent(sessionData.access_token)}&state=${encodeURIComponent(state!)}`;
+          const destination = `${redirectUri}${separator}token=${encodeURIComponent(sessionData.token)}&state=${encodeURIComponent(state!)}`;
           window.location.href = destination;
           return;
         }
@@ -101,7 +101,7 @@ function SSOLoginContent() {
       }
 
       // Check if user must change password before proceeding
-      if (data.must_change_password) {
+      if (data.employee?.must_change_password) {
         window.location.href = `/setup-account?redirect_uri=${encodeURIComponent(redirectUri!)}&state=${encodeURIComponent(state!)}`;
         return;
       }

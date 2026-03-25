@@ -35,13 +35,5 @@ export interface MeResponse {
   data: AuthUser;
 }
 
-export interface RegisterRequest {
-  first_name: string;
-  middle_name?: string;
-  last_name: string;
-}
-
-export interface RegisterResponse {
-  username: string;
-  message: string;
-}
+// Alias for backward compatibility
+export type RegisterRequest = RegisterData;

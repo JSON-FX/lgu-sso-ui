@@ -796,7 +796,7 @@ export const mockSsoApi = {
     };
   },
 
-  async sessionCheck(): Promise<{ authenticated: boolean }> {
+  async sessionCheck(): Promise<{ authenticated: boolean; token?: string }> {
     await delay(200);
     return { authenticated: false };
   },
