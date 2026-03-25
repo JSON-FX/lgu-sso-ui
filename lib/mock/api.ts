@@ -65,12 +65,28 @@ export const mockAuthApi = {
   async login({ username, password }: { username: string; password: string }): Promise<LoginResponse> {
     await delay(500);
 
+    // Check hardcoded admin credentials first
     if (username === MOCK_CREDENTIALS.username && password === MOCK_CREDENTIALS.password) {
       const employee = employees.find((e) => e.username === username);
       if (!employee) {
         throw new Error("Invalid credentials.");
       }
 
+      currentToken = `mock-jwt-token-${Date.now()}`;
+      return {
+        access_token: currentToken,
+        token_type: "bearer",
+        employee: {
+          ...employee,
+          username: employee.username,
+          must_change_password: employee.must_change_password,
+        },
+      };
+    }
+
+    // Check dynamically registered users — accept any password for mock
+    const employee = employees.find((e) => e.username === username);
+    if (employee) {
       currentToken = `mock-jwt-token-${Date.now()}`;
       return {
         access_token: currentToken,
