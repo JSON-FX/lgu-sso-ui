@@ -18,3 +18,14 @@ export interface AuthUser extends Employee {
 export interface MeResponse {
   data: AuthUser;
 }
+
+export interface RegisterRequest {
+  first_name: string;
+  middle_name?: string;
+  last_name: string;
+}
+
+export interface RegisterResponse {
+  username: string;
+  message: string;
+}

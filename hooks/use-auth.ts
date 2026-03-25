@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { AuthUser } from "@/types";
+import { AuthUser, RegisterRequest, RegisterResponse } from "@/types";
 import { api } from "@/lib/api";
 
 interface AuthState {
@@ -12,6 +12,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isSuperAdmin: boolean;
   login: (email: string, password: string) => Promise<void>;
+  register: (data: RegisterRequest) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
 }
@@ -52,6 +53,10 @@ export const useAuth = create<AuthState>()(
           isSuperAdmin: superAdmin,
           isLoading: false,
         });
+      },
+
+      register: async (data: RegisterRequest) => {
+        return api.auth.register(data);
       },
 
       logout: async () => {

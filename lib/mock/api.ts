@@ -28,6 +28,8 @@ import {
   LoginResponse,
   ApplicationWithSecret,
   ApplicationEmployee,
+  RegisterRequest,
+  RegisterResponse,
 } from "@/types";
 
 import {
@@ -72,6 +74,19 @@ export const mockAuthApi = {
     }
 
     throw new Error("Invalid credentials.");
+  },
+
+  async register(data: RegisterRequest): Promise<RegisterResponse> {
+    await delay(500);
+
+    const firstInitial = data.first_name.charAt(0).toLowerCase();
+    const lastName = data.last_name.toLowerCase().replace(/\s+/g, "");
+    const username = `${firstInitial}${lastName}`;
+
+    return {
+      username,
+      message: "Account created successfully.",
+    };
   },
 
   async logout(): Promise<MessageResponse> {

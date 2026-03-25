@@ -5,7 +5,7 @@
  */
 
 import { apiClient, setAuthToken, removeAuthToken, hasAuthToken } from "./client";
-import { AuthUser, LoginResponse, MessageResponse } from "@/types";
+import { AuthUser, LoginResponse, MessageResponse, RegisterRequest, RegisterResponse } from "@/types";
 
 export const authApi = {
   async login(email: string, password: string): Promise<LoginResponse> {
@@ -32,6 +32,10 @@ export const authApi = {
     const response = await apiClient.post<MessageResponse>("/auth/logout-all");
     removeAuthToken();
     return response;
+  },
+
+  async register(data: RegisterRequest): Promise<RegisterResponse> {
+    return apiClient.post<RegisterResponse>("/auth/register", data);
   },
 
   async me(): Promise<{ data: AuthUser }> {
