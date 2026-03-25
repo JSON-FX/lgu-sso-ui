@@ -11,7 +11,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, isLoading, checkAuth } = useAuth();
+  const { isAuthenticated, isLoading, isSuperAdmin, mustChangePassword, checkAuth } = useAuth();
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -20,10 +20,23 @@ export default function DashboardLayout({
   }, [checkAuth]);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (isLoading) return;
+
+    if (!isAuthenticated) {
       router.push("/login");
+      return;
     }
-  }, [isLoading, isAuthenticated, router]);
+
+    if (mustChangePassword) {
+      router.push("/setup-account");
+      return;
+    }
+
+    if (!isSuperAdmin) {
+      router.push("/portal");
+      return;
+    }
+  }, [isLoading, isAuthenticated, isSuperAdmin, mustChangePassword, router]);
 
   if (isLoading) {
     return (

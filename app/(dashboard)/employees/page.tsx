@@ -139,6 +139,7 @@ export default function EmployeesPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
+              <TableHead>Username</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Apps</TableHead>
@@ -157,6 +158,7 @@ export default function EmployeesPage() {
                       <Skeleton className="h-4 w-32" />
                     </div>
                   </TableCell>
+                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-40" /></TableCell>
                   <TableCell><Skeleton className="h-5 w-16" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-8" /></TableCell>
@@ -166,7 +168,7 @@ export default function EmployeesPage() {
               ))
             ) : employees.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center">
+                <TableCell colSpan={7} className="h-32 text-center">
                   <p className="text-muted-foreground">No employees found</p>
                 </TableCell>
               </TableRow>
@@ -191,6 +193,9 @@ export default function EmployeesPage() {
                         )}
                       </div>
                     </div>
+                  </TableCell>
+                  <TableCell className="font-mono text-muted-foreground">
+                    {employee.username}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {employee.email}
