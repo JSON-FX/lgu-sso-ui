@@ -21,6 +21,8 @@ export interface Employee {
   age: number;
   civil_status: "single" | "married" | "widowed" | "separated" | "divorced";
   email: string;
+  username: string;
+  must_change_password: boolean;
   is_active: boolean;
   nationality: string;
   residence: string;
@@ -64,8 +66,8 @@ export interface CreateEmployeeData {
   house_number?: string;
   residence: string;
   nationality: string;
-  email: string;
-  password: string;
+  email?: string;
+  password?: string;
   office_id?: number;
   position: string;
   date_employed?: string;

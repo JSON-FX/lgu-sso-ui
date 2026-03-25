@@ -1,8 +1,24 @@
 import { Employee, EmployeeApplication } from "./employee";
 
 export interface LoginCredentials {
-  email: string;
+  username: string;
   password: string;
+}
+
+export interface RegisterData {
+  first_name: string;
+  middle_name?: string;
+  last_name: string;
+}
+
+export interface RegisterResponse {
+  username: string;
+  message: string;
+}
+
+export interface ChangePasswordData {
+  current_password: string;
+  new_password: string;
 }
 
 export interface LoginResponse {
