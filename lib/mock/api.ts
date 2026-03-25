@@ -30,6 +30,8 @@ import {
   ApplicationEmployee,
 } from "@/types";
 
+import { UpdatePortalProfileData } from "@/types/portal";
+
 import {
   mockEmployees,
   mockApplications,
@@ -59,19 +61,112 @@ let currentToken: string | null = null;
 // ============================================
 
 export const mockAuthApi = {
-  async login(email: string, password: string): Promise<LoginResponse> {
+  async login({ username, password }: { username: string; password: string }): Promise<LoginResponse> {
     await delay(500);
 
-    if (email === MOCK_CREDENTIALS.email && password === MOCK_CREDENTIALS.password) {
+    if (username === MOCK_CREDENTIALS.username && password === MOCK_CREDENTIALS.password) {
+      const employee = employees.find((e) => e.username === username);
+      if (!employee) {
+        throw new Error("Invalid credentials.");
+      }
+
       currentToken = `mock-jwt-token-${Date.now()}`;
       return {
         access_token: currentToken,
         token_type: "bearer",
-        employee: mockCurrentUser,
+        employee: {
+          ...employee,
+          username: employee.username,
+          must_change_password: employee.must_change_password,
+        },
       };
     }
 
     throw new Error("Invalid credentials.");
+  },
+
+  async register({ first_name, middle_name, last_name }: { first_name: string; middle_name?: string; last_name: string }): Promise<{ data: { username: string; message: string } }> {
+    await delay(500);
+
+    // Generate username: first_initial.last_name lowercased, remove spaces from last name
+    const firstInitial = first_name[0].toLowerCase();
+    const normalizedLastName = last_name.toLowerCase().replace(/\s+/g, "");
+    let baseUsername = `${firstInitial}.${normalizedLastName}`;
+    let username = baseUsername;
+
+    // Check for collision, append number if needed
+    let counter = 1;
+    while (employees.some((e) => e.username === username)) {
+      counter++;
+      username = `${baseUsername}${counter}`;
+    }
+
+    // Create new employee
+    const newEmployee: Employee = {
+      uuid: `emp-${generateUUID()}`,
+      first_name,
+      middle_name: middle_name || null,
+      last_name,
+      suffix: null,
+      full_name: [first_name, middle_name, last_name].filter(Boolean).join(" "),
+      initials: [first_name[0], middle_name?.[0], last_name[0]].filter(Boolean).join("."),
+      birthday: "2000-01-01",
+      age: 26,
+      civil_status: "single",
+      email: `${username}@lgu.gov.ph`,
+      username,
+      must_change_password: true,
+      is_active: true,
+      nationality: "Filipino",
+      residence: "",
+      block_number: null,
+      building_floor: null,
+      house_number: null,
+      region: null,
+      province: null,
+      city: null,
+      barangay: null,
+      office: null,
+      position: null,
+      date_employed: null,
+      date_terminated: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      applications: applications
+        .filter((app) => app.is_active)
+        .map((app) => ({
+          uuid: app.uuid,
+          name: app.name,
+          role: "guest" as Role,
+        })),
+    };
+
+    employees.unshift(newEmployee);
+
+    return { data: { username, message: "Registration successful" } };
+  },
+
+  async changePassword({ current_password, new_password }: { current_password: string; new_password: string }): Promise<MessageResponse> {
+    await delay(400);
+
+    // Mock validation: check current_password is non-empty
+    if (!current_password) {
+      throw new Error("Current password is required.");
+    }
+
+    if (!new_password) {
+      throw new Error("New password is required.");
+    }
+
+    // Find the current user in the employees array and set must_change_password to false
+    const currentEmployee = employees.find((e) => e.uuid === mockCurrentUser.uuid);
+    if (currentEmployee) {
+      currentEmployee.must_change_password = false;
+    }
+    // Also update mockCurrentUser directly
+    (mockCurrentUser as AuthUser & { must_change_password: boolean }).must_change_password = false;
+
+    return { message: "Password changed successfully" };
   },
 
   async logout(): Promise<MessageResponse> {
@@ -211,7 +306,9 @@ export const mockEmployeeApi = {
         (Date.now() - new Date(data.birthday).getTime()) / (365.25 * 24 * 60 * 60 * 1000)
       ),
       civil_status: data.civil_status,
-      email: data.email,
+      email: data.email || `${data.first_name[0].toLowerCase()}.${data.last_name.toLowerCase().replace(/\s+/g, "")}@lgu.gov.ph`,
+      username: `${data.first_name[0].toLowerCase()}.${data.last_name.toLowerCase().replace(/\s+/g, "")}`,
+      must_change_password: true,
       is_active: true,
       nationality: data.nationality,
       residence: data.residence,
@@ -670,6 +767,64 @@ export const mockStatsApi = {
       activeApplications: applications.filter((a) => a.is_active).length,
       recentLogins: auditLogs.filter((log) => log.action === "login").length,
     };
+  },
+};
+
+// ============================================
+// SSO ENDPOINTS
+// ============================================
+
+export const mockSsoApi = {
+  async validateRedirect({ client_id, redirect_uri }: { client_id: string; redirect_uri: string }): Promise<{ valid: boolean; application: { name: string; description: string | null } }> {
+    await delay(300);
+
+    const application = applications.find((a) => a.client_id === client_id);
+    if (!application) {
+      throw new Error("Invalid client_id.");
+    }
+
+    if (!application.redirect_uris.includes(redirect_uri)) {
+      throw new Error("Invalid redirect_uri.");
+    }
+
+    return {
+      valid: true,
+      application: {
+        name: application.name,
+        description: application.description,
+      },
+    };
+  },
+
+  async sessionCheck(): Promise<{ authenticated: boolean }> {
+    await delay(200);
+    return { authenticated: false };
+  },
+};
+
+// ============================================
+// PORTAL ENDPOINTS
+// ============================================
+
+export const mockPortalApi = {
+  async getProfile(): Promise<{ data: AuthUser }> {
+    await delay(300);
+    return { data: mockCurrentUser };
+  },
+
+  async updateProfile(data: UpdatePortalProfileData): Promise<{ data: AuthUser }> {
+    await delay(400);
+
+    // Merge data into mockCurrentUser
+    Object.assign(mockCurrentUser, data);
+    (mockCurrentUser as AuthUser).updated_at = new Date().toISOString();
+
+    return { data: mockCurrentUser };
+  },
+
+  async getApplications(): Promise<{ data: AuthUser["applications"] }> {
+    await delay(300);
+    return { data: mockCurrentUser.applications };
   },
 };
 
