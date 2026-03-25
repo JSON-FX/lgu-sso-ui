@@ -11,6 +11,7 @@
 
 import {
   Employee,
+  EmployeeApplication,
   Application,
   AuditLog,
   AuthUser,
@@ -807,24 +808,24 @@ export const mockSsoApi = {
 // ============================================
 
 export const mockPortalApi = {
-  async getProfile(): Promise<{ data: AuthUser }> {
+  async getProfile(): Promise<Employee> {
     await delay(300);
-    return { data: mockCurrentUser };
+    return mockCurrentUser as unknown as Employee;
   },
 
-  async updateProfile(data: UpdatePortalProfileData): Promise<{ data: AuthUser }> {
+  async updateProfile(data: UpdatePortalProfileData): Promise<Employee> {
     await delay(400);
 
     // Merge data into mockCurrentUser
     Object.assign(mockCurrentUser, data);
     (mockCurrentUser as AuthUser).updated_at = new Date().toISOString();
 
-    return { data: mockCurrentUser };
+    return mockCurrentUser as unknown as Employee;
   },
 
-  async getApplications(): Promise<{ data: AuthUser["applications"] }> {
+  async getApplications(): Promise<EmployeeApplication[]> {
     await delay(300);
-    return { data: mockCurrentUser.applications };
+    return mockCurrentUser.applications || [];
   },
 };
 
