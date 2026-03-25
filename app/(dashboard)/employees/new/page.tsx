@@ -28,7 +28,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { ArrowLeft, Loader2, UserPlus, User, MapPin, Lock, Briefcase, Check, ChevronsUpDown } from "lucide-react";
+import { ArrowLeft, Loader2, UserPlus, User, MapPin, Lock, Briefcase, Check, ChevronsUpDown, Info } from "lucide-react";
 import { api } from "@/lib/api";
 import { psgcApi, PSGCRegion, PSGCProvince, PSGCMunicipality, PSGCBarangay } from "@/lib/api/psgc";
 import { CreateEmployeeData, Office } from "@/types";
@@ -49,7 +49,6 @@ export default function NewEmployeePage() {
     last_name: "",
     suffix: "",
     email: "",
-    password: "",
     birthday: "",
     civil_status: "single",
     nationality: "Filipino",
@@ -161,11 +160,8 @@ export default function NewEmployeePage() {
     if (!formData.last_name || formData.last_name.length < 2) {
       newErrors.last_name = "Last name must be at least 2 characters";
     }
-    if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Please enter a valid email address";
-    }
-    if (!formData.password || formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
     }
     if (!formData.birthday) {
       newErrors.birthday = "Birthday is required";
@@ -205,6 +201,7 @@ export default function NewEmployeePage() {
         building_floor: formData.building_floor || null,
         office_id: formData.office_id || null,
         date_employed: formData.date_employed || null,
+        email: formData.email || undefined,
       };
       const response = await api.employees.create(sanitizedData as CreateEmployeeData);
       toast.success("Employee created successfully");
@@ -353,7 +350,7 @@ export default function NewEmployeePage() {
           <CardContent className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="email">
-                Email Address <span className="text-destructive">*</span>
+                Email Address <span className="text-muted-foreground text-xs">(optional)</span>
               </Label>
               <Input
                 id="email"
@@ -365,19 +362,13 @@ export default function NewEmployeePage() {
               />
               {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">
-                Password <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className={errors.password ? "border-destructive" : ""}
-                placeholder="Minimum 8 characters"
-              />
-              {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+            <div className="flex items-end">
+              <div className="bg-muted/50 border rounded-lg p-3 flex items-start gap-2 w-full">
+                <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  Username and default password will be auto-generated from the employee&apos;s name.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
