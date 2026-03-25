@@ -6,11 +6,12 @@
 
 import { apiClient, setAuthToken, removeAuthToken, hasAuthToken } from "./client";
 import { AuthUser, LoginResponse, MessageResponse } from "@/types";
+import { RegisterData, RegisterResponse, ChangePasswordData } from "@/types/auth";
 
 export const authApi = {
-  async login(email: string, password: string): Promise<LoginResponse> {
+  async login({ username, password }: { username: string; password: string }): Promise<LoginResponse> {
     const response = await apiClient.post<LoginResponse>("/auth/login", {
-      email,
+      username,
       password,
     });
 
@@ -48,6 +49,15 @@ export const authApi = {
     }
 
     return response;
+  },
+
+  async register(data: RegisterData): Promise<RegisterResponse> {
+    const response = await apiClient.post<{ data: RegisterResponse }>("/auth/register", data);
+    return response.data;
+  },
+
+  async changePassword(data: ChangePasswordData): Promise<{ message: string }> {
+    return apiClient.post<{ message: string }>("/auth/change-password", data);
   },
 
   // Helper methods for token management
