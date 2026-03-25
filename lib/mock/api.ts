@@ -85,7 +85,7 @@ export const mockAuthApi = {
     throw new Error("Invalid credentials.");
   },
 
-  async register({ first_name, middle_name, last_name }: { first_name: string; middle_name?: string; last_name: string }): Promise<{ data: { username: string; message: string } }> {
+  async register({ first_name, middle_name, last_name }: { first_name: string; middle_name?: string; last_name: string }): Promise<{ username: string; message: string }> {
     await delay(500);
 
     // Generate username: first_initial.last_name lowercased, remove spaces from last name
@@ -143,7 +143,7 @@ export const mockAuthApi = {
 
     employees.unshift(newEmployee);
 
-    return { data: { username, message: "Registration successful" } };
+    return { username, message: "Registration successful" };
   },
 
   async changePassword({ current_password, new_password }: { current_password: string; new_password: string }): Promise<MessageResponse> {
