@@ -11,6 +11,7 @@
 
 import {
   Employee,
+  EmployeeApplication,
   Application,
   AuditLog,
   AuthUser,
@@ -28,6 +29,7 @@ import {
   LoginResponse,
   ApplicationWithSecret,
   ApplicationEmployee,
+  UpdatePortalProfileData,
 } from "@/types";
 
 import {
@@ -670,6 +672,29 @@ export const mockStatsApi = {
       activeApplications: applications.filter((a) => a.is_active).length,
       recentLogins: auditLogs.filter((log) => log.action === "login").length,
     };
+  },
+};
+
+// ============================================
+// PORTAL ENDPOINTS
+// ============================================
+
+export const mockPortalApi = {
+  async getProfile(): Promise<Employee> {
+    await delay(300);
+    return mockCurrentUser as unknown as Employee;
+  },
+
+  async updateProfile(data: UpdatePortalProfileData): Promise<Employee> {
+    await delay(400);
+    Object.assign(mockCurrentUser, data);
+    (mockCurrentUser as AuthUser).updated_at = new Date().toISOString();
+    return mockCurrentUser as unknown as Employee;
+  },
+
+  async getApplications(): Promise<EmployeeApplication[]> {
+    await delay(300);
+    return mockCurrentUser.applications || [];
   },
 };
 
