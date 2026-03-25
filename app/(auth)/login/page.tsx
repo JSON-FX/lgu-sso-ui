@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Mail, Lock, Loader2, AlertCircle } from "lucide-react";
+import { Shield, User, Lock, Loader2, AlertCircle } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -25,9 +26,16 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      await login(email, password);
+      await login(username, password);
       toast.success("Welcome back!");
-      router.push("/dashboard");
+      const { mustChangePassword, isSuperAdmin } = useAuth.getState();
+      if (mustChangePassword) {
+        router.push("/setup-account");
+      } else if (isSuperAdmin) {
+        router.push("/dashboard");
+      } else {
+        router.push("/portal");
+      }
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -109,7 +117,7 @@ export default function LoginPage() {
             <CardHeader className="space-y-1 pb-6">
               <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
               <CardDescription>
-                Enter your credentials to access the admin dashboard
+                Enter your credentials to continue
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -122,17 +130,17 @@ export default function LoginPage() {
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium">
-                    Email Address
+                  <Label htmlFor="username" className="text-sm font-medium">
+                    Username
                   </Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                      id="email"
-                      type="email"
-                      placeholder="admin@lgu.gov.ph"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      id="username"
+                      type="text"
+                      placeholder="e.g., j.alanano"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
                       className="pl-10 h-11"
                       required
                       disabled={isLoading}
@@ -177,8 +185,10 @@ export default function LoginPage() {
 
               <div className="mt-6 text-center text-sm text-muted-foreground">
                 <p>
-                  This portal is restricted to{" "}
-                  <span className="font-medium text-foreground">Super Administrators</span> only.
+                  Don&apos;t have an account?{" "}
+                  <Link href="/register" className="text-primary hover:underline">
+                    Register here
+                  </Link>
                 </p>
               </div>
             </CardContent>
