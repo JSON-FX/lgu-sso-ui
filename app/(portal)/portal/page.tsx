@@ -13,9 +13,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Pencil, Save, X, Loader2 } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Pencil, Save, X, Loader2, Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
 import { portalApi } from "@/lib/api";
+import { psgcApi, PSGCRegion, PSGCProvince, PSGCMunicipality, PSGCBarangay } from "@/lib/api/psgc";
 import type { Employee } from "@/types/employee";
 import type { UpdatePortalProfileData } from "@/types/portal";
 
@@ -118,6 +132,23 @@ export default function PortalProfilePage() {
     barangay: "",
   });
 
+  // PSGC lists
+  const [regions, setRegions] = useState<PSGCRegion[]>([]);
+  const [provinces, setProvinces] = useState<PSGCProvince[]>([]);
+  const [municipalities, setMunicipalities] = useState<PSGCMunicipality[]>([]);
+  const [barangays, setBarangays] = useState<PSGCBarangay[]>([]);
+
+  // Selected codes for cascading
+  const [selectedRegionCode, setSelectedRegionCode] = useState("");
+  const [selectedProvinceCode, setSelectedProvinceCode] = useState("");
+  const [selectedCityCode, setSelectedCityCode] = useState("");
+
+  // Popover open states
+  const [regionOpen, setRegionOpen] = useState(false);
+  const [provinceOpen, setProvinceOpen] = useState(false);
+  const [municipalityOpen, setMunicipalityOpen] = useState(false);
+  const [barangayOpen, setBarangayOpen] = useState(false);
+
   useEffect(() => {
     async function loadProfile() {
       try {
@@ -133,6 +164,64 @@ export default function PortalProfilePage() {
 
     loadProfile();
   }, []);
+
+  // Load regions when edit mode starts
+  useEffect(() => {
+    if (isEditing) {
+      psgcApi.getRegions().then(setRegions).catch(console.error);
+    }
+  }, [isEditing]);
+
+  const handleRegionChange = async (code: string, name: string) => {
+    setSelectedRegionCode(code);
+    setSelectedProvinceCode("");
+    setSelectedCityCode("");
+    setFormData((prev) => ({ ...prev, region: name, province: "", city: "", barangay: "" }));
+    setProvinces([]);
+    setMunicipalities([]);
+    setBarangays([]);
+
+    if (code) {
+      try {
+        const data = await psgcApi.getProvinces(code);
+        setProvinces(data);
+      } catch (error) {
+        console.error("Failed to load provinces:", error);
+      }
+    }
+  };
+
+  const handleProvinceChange = async (code: string, name: string) => {
+    setSelectedProvinceCode(code);
+    setSelectedCityCode("");
+    setFormData((prev) => ({ ...prev, province: name, city: "", barangay: "" }));
+    setMunicipalities([]);
+    setBarangays([]);
+
+    if (code) {
+      try {
+        const data = await psgcApi.getMunicipalities(code);
+        setMunicipalities(data);
+      } catch (error) {
+        console.error("Failed to load municipalities:", error);
+      }
+    }
+  };
+
+  const handleMunicipalityChange = async (code: string, name: string) => {
+    setSelectedCityCode(code);
+    setFormData((prev) => ({ ...prev, city: name, barangay: "" }));
+    setBarangays([]);
+
+    if (code) {
+      try {
+        const data = await psgcApi.getBarangays(code);
+        setBarangays(data);
+      } catch (error) {
+        console.error("Failed to load barangays:", error);
+      }
+    }
+  };
 
   function handleEdit() {
     if (!profile) return;
@@ -153,6 +242,12 @@ export default function PortalProfilePage() {
 
   function handleCancel() {
     setIsEditing(false);
+    setSelectedRegionCode("");
+    setSelectedProvinceCode("");
+    setSelectedCityCode("");
+    setProvinces([]);
+    setMunicipalities([]);
+    setBarangays([]);
   }
 
   async function handleSave() {
@@ -358,15 +453,46 @@ export default function PortalProfilePage() {
                   <label className="text-xs text-muted-foreground uppercase tracking-wide">
                     Region
                   </label>
-                  <Input
-                    value={formData.region}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        region: e.target.value,
-                      }))
-                    }
-                  />
+                  <Popover open={regionOpen} onOpenChange={setRegionOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={regionOpen}
+                        className="w-full justify-between font-normal"
+                      >
+                        {formData.region || "Select region"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search region..." />
+                        <CommandList>
+                          <CommandEmpty>No region found.</CommandEmpty>
+                          <CommandGroup>
+                            {regions.map((r) => (
+                              <CommandItem
+                                key={r.code}
+                                value={r.name}
+                                onSelect={() => {
+                                  handleRegionChange(r.code, r.name);
+                                  setRegionOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={`mr-2 h-4 w-4 ${
+                                    selectedRegionCode === r.code ? "opacity-100" : "opacity-0"
+                                  }`}
+                                />
+                                {r.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               ) : (
                 <ProfileField label="Region" value={profile?.region} />
@@ -378,35 +504,99 @@ export default function PortalProfilePage() {
                   <label className="text-xs text-muted-foreground uppercase tracking-wide">
                     Province
                   </label>
-                  <Input
-                    value={formData.province}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        province: e.target.value,
-                      }))
-                    }
-                  />
+                  <Popover open={provinceOpen} onOpenChange={setProvinceOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={provinceOpen}
+                        className="w-full justify-between font-normal"
+                        disabled={!selectedRegionCode}
+                      >
+                        {formData.province || "Select province"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search province..." />
+                        <CommandList>
+                          <CommandEmpty>No province found.</CommandEmpty>
+                          <CommandGroup>
+                            {provinces.map((p) => (
+                              <CommandItem
+                                key={p.code}
+                                value={p.name}
+                                onSelect={() => {
+                                  handleProvinceChange(p.code, p.name);
+                                  setProvinceOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={`mr-2 h-4 w-4 ${
+                                    selectedProvinceCode === p.code ? "opacity-100" : "opacity-0"
+                                  }`}
+                                />
+                                {p.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               ) : (
                 <ProfileField label="Province" value={profile?.province} />
               )}
 
-              {/* City */}
+              {/* City/Municipality */}
               {isEditing ? (
                 <div className="space-y-1">
                   <label className="text-xs text-muted-foreground uppercase tracking-wide">
-                    City
+                    City/Municipality
                   </label>
-                  <Input
-                    value={formData.city}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        city: e.target.value,
-                      }))
-                    }
-                  />
+                  <Popover open={municipalityOpen} onOpenChange={setMunicipalityOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={municipalityOpen}
+                        className="w-full justify-between font-normal"
+                        disabled={!selectedProvinceCode}
+                      >
+                        {formData.city || "Select city/municipality"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search city/municipality..." />
+                        <CommandList>
+                          <CommandEmpty>No city/municipality found.</CommandEmpty>
+                          <CommandGroup>
+                            {municipalities.map((m) => (
+                              <CommandItem
+                                key={m.code}
+                                value={m.name}
+                                onSelect={() => {
+                                  handleMunicipalityChange(m.code, m.name);
+                                  setMunicipalityOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={`mr-2 h-4 w-4 ${
+                                    selectedCityCode === m.code ? "opacity-100" : "opacity-0"
+                                  }`}
+                                />
+                                {m.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               ) : (
                 <ProfileField label="City" value={profile?.city} />
@@ -418,15 +608,47 @@ export default function PortalProfilePage() {
                   <label className="text-xs text-muted-foreground uppercase tracking-wide">
                     Barangay
                   </label>
-                  <Input
-                    value={formData.barangay}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        barangay: e.target.value,
-                      }))
-                    }
-                  />
+                  <Popover open={barangayOpen} onOpenChange={setBarangayOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={barangayOpen}
+                        className="w-full justify-between font-normal"
+                        disabled={!selectedCityCode}
+                      >
+                        {formData.barangay || "Select barangay"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search barangay..." />
+                        <CommandList>
+                          <CommandEmpty>No barangay found.</CommandEmpty>
+                          <CommandGroup>
+                            {barangays.map((b) => (
+                              <CommandItem
+                                key={b.code}
+                                value={b.name}
+                                onSelect={() => {
+                                  setFormData((prev) => ({ ...prev, barangay: b.name }));
+                                  setBarangayOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={`mr-2 h-4 w-4 ${
+                                    formData.barangay === b.name ? "opacity-100" : "opacity-0"
+                                  }`}
+                                />
+                                {b.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               ) : (
                 <ProfileField label="Barangay" value={profile?.barangay} />
