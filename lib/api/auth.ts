@@ -52,8 +52,7 @@ export const authApi = {
   },
 
   async register(data: RegisterData): Promise<RegisterResponse> {
-    const response = await apiClient.post<{ data: RegisterResponse }>("/auth/register", data);
-    return response.data;
+    return apiClient.post<RegisterResponse>("/auth/register", data);
   },
 
   async changePassword(data: ChangePasswordData): Promise<{ message: string }> {
