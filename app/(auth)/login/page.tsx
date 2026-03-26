@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, User, Lock, Loader2, AlertCircle } from "lucide-react";
+import { User, Lock, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api";
 
@@ -60,9 +61,7 @@ export default function LoginPage() {
 
         <div className="relative z-10 flex flex-col justify-center px-16">
           <div className="flex items-center gap-4 mb-8">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sidebar-primary shadow-lg shadow-sidebar-primary/30">
-              <Shield className="h-8 w-8 text-sidebar-primary-foreground" />
-            </div>
+            <Image src="/lgu-seal.png" alt="LGU Quezon" width={56} height={56} />
             <div>
               <h1 className="text-3xl font-bold text-sidebar-foreground">LGU-SSO</h1>
               <p className="text-sm font-medium text-sidebar-foreground/60 uppercase tracking-wider">
@@ -104,9 +103,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-              <Shield className="h-6 w-6 text-primary-foreground" />
-            </div>
+            <Image src="/lgu-seal.png" alt="LGU Quezon" width={48} height={48} className="rounded-full" />
             <div>
               <h1 className="text-xl font-bold">LGU-SSO</h1>
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Admin Portal</p>
@@ -195,7 +192,7 @@ export default function LoginPage() {
           </Card>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Local Government Unit. All rights reserved.
+            &copy; {new Date().getFullYear()} Local Government of Quezon Bukidnon. All rights reserved.
           </p>
         </div>
       </div>

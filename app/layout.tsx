@@ -16,6 +16,9 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "LGU-SSO Admin",
   description: "Administrator Dashboard for LGU Single Sign-On System",
+  icons: {
+    icon: '/favicon.png',
+  },
 };
 
 export default function RootLayout({

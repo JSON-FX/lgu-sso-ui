@@ -13,8 +13,8 @@ import {
   CheckCircle2,
   Circle,
   Check,
-  Shield,
 } from "lucide-react";
+import Image from "next/image";
 import { toast } from "sonner";
 
 const STEP_LABELS = ["Welcome", "New Password", "Done"] as const;
@@ -93,9 +93,7 @@ function WelcomeStep({
   return (
     <Card className="w-full max-w-md border-0 shadow-xl shadow-primary/5">
       <CardContent className="flex flex-col items-center text-center pt-8 pb-8 px-8">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 mb-6">
-          <Shield className="h-8 w-8 text-primary" />
-        </div>
+        <Image src="/lgu-seal.png" alt="LGU Quezon" width={64} height={64} className="mb-6" />
         <h2 className="text-2xl font-bold text-foreground mb-2">
           Welcome, {firstName}!
         </h2>
@@ -374,9 +372,7 @@ function SetupAccountContent() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4 py-8">
       <div className="mb-8 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-          <Shield className="h-5 w-5 text-primary-foreground" />
-        </div>
+        <Image src="/lgu-seal.png" alt="LGU Quezon" width={40} height={40} className="rounded-full" />
         <span className="text-lg font-bold text-foreground">LGU-SSO</span>
       </div>
 
@@ -406,7 +402,7 @@ function SetupAccountContent() {
       </div>
 
       <p className="mt-12 text-center text-xs text-muted-foreground">
-        &copy; {new Date().getFullYear()} Local Government Unit. All rights
+        &copy; {new Date().getFullYear()} Local Government of Quezon Bukidnon. All rights
         reserved.
       </p>
     </div>
