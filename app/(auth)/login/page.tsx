@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Lock, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
+
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api";
 
@@ -61,7 +61,7 @@ export default function LoginPage() {
 
         <div className="relative z-10 flex flex-col justify-center px-16">
           <div className="flex items-center gap-4 mb-8">
-            <Image src="/lgu-seal.png" alt="LGU Quezon" width={56} height={56} />
+            <img src="/lgu-seal.png" alt="LGU Quezon" className="w-14 h-14" />
             <div>
               <h1 className="text-3xl font-bold text-sidebar-foreground">LGU-SSO</h1>
               <p className="text-sm font-medium text-sidebar-foreground/60 uppercase tracking-wider">
@@ -103,7 +103,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <Image src="/lgu-seal.png" alt="LGU Quezon" width={48} height={48} className="rounded-full" />
+            <img src="/lgu-seal.png" alt="LGU Quezon" className="w-12 h-12 rounded-full" />
             <div>
               <h1 className="text-xl font-bold">LGU-SSO</h1>
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Admin Portal</p>

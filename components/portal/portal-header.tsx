@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+
 import { toast } from "sonner";
 
 export function PortalHeader() {
@@ -33,7 +33,7 @@ export function PortalHeader() {
     <header className="flex h-14 items-center justify-between border-b border-border bg-sidebar px-6">
       {/* Left side - Logo and title */}
       <div className="flex items-center gap-3">
-        <Image src="/lgu-seal.png" alt="LGU Quezon" width={28} height={28} className="rounded-full" />
+        <img src="/lgu-seal.png" alt="LGU Quezon" className="w-7 h-7 rounded-full" />
         <span className="font-semibold text-sidebar-foreground">
           LGU Portal
         </span>

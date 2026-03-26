@@ -14,7 +14,7 @@ import {
   Circle,
   Check,
 } from "lucide-react";
-import Image from "next/image";
+
 import { toast } from "sonner";
 
 const STEP_LABELS = ["Welcome", "New Password", "Done"] as const;
@@ -93,7 +93,7 @@ function WelcomeStep({
   return (
     <Card className="w-full max-w-md border-0 shadow-xl shadow-primary/5">
       <CardContent className="flex flex-col items-center text-center pt-8 pb-8 px-8">
-        <Image src="/lgu-seal.png" alt="LGU Quezon" width={64} height={64} className="mb-6" />
+        <img src="/lgu-seal.png" alt="LGU Quezon" className="w-16 h-16 mb-6" />
         <h2 className="text-2xl font-bold text-foreground mb-2">
           Welcome, {firstName}!
         </h2>
@@ -372,7 +372,7 @@ function SetupAccountContent() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4 py-8">
       <div className="mb-8 flex items-center gap-3">
-        <Image src="/lgu-seal.png" alt="LGU Quezon" width={40} height={40} className="rounded-full" />
+        <img src="/lgu-seal.png" alt="LGU Quezon" className="w-10 h-10 rounded-full" />
         <span className="text-lg font-bold text-foreground">LGU-SSO</span>
       </div>
 

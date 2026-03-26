@@ -11,7 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import Image from "next/image";
+
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -52,7 +52,7 @@ export function Sidebar() {
       {/* Logo Section */}
       <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <Image src="/lgu-seal.png" alt="LGU Quezon" width={28} height={28} className="rounded-full" />
+          <img src="/lgu-seal.png" alt="LGU Quezon" className="w-7 h-7 rounded-full" />
           {!collapsed && (
             <div className="flex flex-col">
               <span className="text-sm font-bold tracking-tight text-sidebar-foreground">
