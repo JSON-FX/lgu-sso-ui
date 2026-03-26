@@ -135,9 +135,8 @@ function PasswordStep({
 
   const validations = useMemo(
     () => ({
-      minLength: newPassword.length >= 8,
+      minLength: newPassword.length >= 6,
       hasNumber: /\d/.test(newPassword),
-      hasSpecial: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(newPassword),
       passwordsMatch:
         confirmPassword.length > 0 && newPassword === confirmPassword,
     }),
@@ -147,7 +146,6 @@ function PasswordStep({
   const allValid =
     validations.minLength &&
     validations.hasNumber &&
-    validations.hasSpecial &&
     validations.passwordsMatch;
 
   return (
@@ -231,16 +229,12 @@ function PasswordStep({
 
           <div className="space-y-2 pt-2">
             <ValidationItem
-              label="At least 8 characters"
+              label="At least 6 characters"
               valid={validations.minLength}
             />
             <ValidationItem
               label="Contains a number"
               valid={validations.hasNumber}
-            />
-            <ValidationItem
-              label="Contains a special character"
-              valid={validations.hasSpecial}
             />
             {confirmPassword.length > 0 && (
               <ValidationItem

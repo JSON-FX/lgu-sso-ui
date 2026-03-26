@@ -28,16 +28,14 @@ export default function ChangePasswordPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Validation checks
-  const hasMinLength = newPassword.length >= 8;
+  const hasMinLength = newPassword.length >= 6;
   const hasNumber = /\d/.test(newPassword);
-  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
   const passwordsMatch = newPassword === confirmPassword;
 
   const allValid =
     currentPassword.length > 0 &&
     hasMinLength &&
     hasNumber &&
-    hasSpecialChar &&
     confirmPassword.length > 0 &&
     passwordsMatch;
 
@@ -165,15 +163,11 @@ export default function ChangePasswordPage() {
             <div className="space-y-2 text-sm">
               <ValidationItem
                 valid={hasMinLength}
-                label="At least 8 characters"
+                label="At least 6 characters"
               />
               <ValidationItem
                 valid={hasNumber}
                 label="Contains a number"
-              />
-              <ValidationItem
-                valid={hasSpecialChar}
-                label="Contains a special character"
               />
               {confirmPassword.length > 0 && (
                 <ValidationItem
