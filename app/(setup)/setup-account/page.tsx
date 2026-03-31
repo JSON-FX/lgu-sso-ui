@@ -351,6 +351,17 @@ function SetupAccountContent() {
     setIsSubmitting(true);
     try {
       await changePassword(sessionPassword, newPassword);
+
+      // For SSO flows, redirect back to SSO login immediately
+      // (the layout would redirect before step 3 renders anyway)
+      const clientId = searchParams.get("client_id");
+      const redirectUri = searchParams.get("redirect_uri");
+      const state = searchParams.get("state");
+      if (clientId && redirectUri && state) {
+        window.location.href = `/sso/login?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}`;
+        return;
+      }
+
       goToStep(3);
     } catch (err) {
       if (err instanceof Error) {
