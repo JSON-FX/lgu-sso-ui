@@ -3,6 +3,7 @@ export interface UpdatePortalProfileData {
   birthday?: string;
   civil_status?: "single" | "married" | "widowed" | "separated" | "divorced";
   nationality?: string;
+  suffix?: string;
   residence?: string;
   block_number?: string;
   building_floor?: string;

@@ -4,7 +4,15 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { Sidebar, Header } from "@/components/layout";
-import { Loader2 } from "lucide-react";
+import type { NavItem } from "@/components/layout/sidebar";
+import { Loader2, LayoutDashboard, Users, AppWindow, ScrollText } from "lucide-react";
+
+const adminNavItems: NavItem[] = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Employees", href: "/employees", icon: Users },
+  { name: "Applications", href: "/applications", icon: AppWindow },
+  { name: "Audit Logs", href: "/audit", icon: ScrollText },
+];
 
 export default function DashboardLayout({
   children,
@@ -55,7 +63,7 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-background">
-      <Sidebar />
+      <Sidebar navItems={adminNavItems} />
       <div
         className={`flex flex-1 flex-col transition-all duration-300 ${
           sidebarCollapsed ? "ml-[72px]" : "ml-64"

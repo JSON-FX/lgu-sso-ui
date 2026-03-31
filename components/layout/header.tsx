@@ -15,7 +15,11 @@ import { LogOut, User, ChevronDown, Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-export function Header() {
+interface HeaderProps {
+  showNotifications?: boolean;
+}
+
+export function Header({ showNotifications = true }: HeaderProps) {
   const { user, logout } = useAuth();
   const router = useRouter();
 
@@ -41,16 +45,18 @@ export function Header() {
       {/* Right side - notifications and user menu */}
       <div className="flex items-center gap-3">
         {/* Notifications */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative text-muted-foreground hover:text-foreground"
-        >
-          <Bell className="h-5 w-5" />
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
-            3
-          </span>
-        </Button>
+        {showNotifications && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative text-muted-foreground hover:text-foreground"
+          >
+            <Bell className="h-5 w-5" />
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
+              3
+            </span>
+          </Button>
+        )}
 
         {/* User Menu */}
         <DropdownMenu>

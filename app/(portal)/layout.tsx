@@ -1,40 +1,42 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
-import { PortalHeader } from "@/components/portal/portal-header";
-import { PortalSidebar } from "@/components/portal/portal-sidebar";
-import { Loader2 } from "lucide-react";
+import { Sidebar, Header } from "@/components/layout";
+import type { NavItem } from "@/components/layout/sidebar";
+import { Loader2, User, AppWindow, KeyRound } from "lucide-react";
+
+const portalNavItems: NavItem[] = [
+  { name: "Profile", href: "/portal", icon: User, exact: true },
+  { name: "Applications", href: "/portal/applications", icon: AppWindow },
+  { name: "Change Password", href: "/portal/change-password", icon: KeyRound },
+];
 
 export default function PortalLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const authState = useAuth();
-  const { isAuthenticated, isLoading, checkAuth } = authState;
+  const { isAuthenticated, isLoading, mustChangePassword, checkAuth } = useAuth();
   const router = useRouter();
-
-  // mustChangePassword will be added to the auth store in a future task;
-  // until then it is safely undefined (falsy), so the redirect won't fire.
-  const mustChangePassword = (
-    authState as unknown as { mustChangePassword?: boolean }
-  ).mustChangePassword;
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push("/login");
-    }
-  }, [isLoading, isAuthenticated, router]);
+    if (isLoading) return;
 
-  useEffect(() => {
-    if (!isLoading && isAuthenticated && mustChangePassword) {
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+
+    if (mustChangePassword) {
       router.push("/setup-account");
+      return;
     }
   }, [isLoading, isAuthenticated, mustChangePassword, router]);
 
@@ -54,11 +56,20 @@ export default function PortalLayout({
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <PortalHeader />
-      <div className="flex flex-1">
-        <PortalSidebar />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+    <div className="flex min-h-screen bg-background">
+      <Sidebar
+        navItems={portalNavItems}
+        branding={{ title: "LGU-SSO", subtitle: "Portal" }}
+      />
+      <div
+        className={`flex flex-1 flex-col transition-all duration-300 ${
+          sidebarCollapsed ? "ml-[72px]" : "ml-64"
+        }`}
+      >
+        <Header showNotifications={false} />
+        <main className="flex-1 overflow-auto p-6">
+          <div className="mx-auto max-w-7xl">{children}</div>
+        </main>
       </div>
     </div>
   );

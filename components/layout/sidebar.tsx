@@ -3,42 +3,26 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import {
-  LayoutDashboard,
-  Users,
-  AppWindow,
-  ScrollText,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-
+import { ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
-const navigation = [
-  {
-    name: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    name: "Employees",
-    href: "/employees",
-    icon: Users,
-  },
-  {
-    name: "Applications",
-    href: "/applications",
-    icon: AppWindow,
-  },
-  {
-    name: "Audit Logs",
-    href: "/audit",
-    icon: ScrollText,
-  },
-];
+export interface NavItem {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+  exact?: boolean;
+}
 
-export function Sidebar() {
+interface SidebarProps {
+  navItems: NavItem[];
+  branding?: { title: string; subtitle: string };
+}
+
+export function Sidebar({
+  navItems,
+  branding = { title: "LGU-SSO", subtitle: "Admin Portal" },
+}: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -51,15 +35,15 @@ export function Sidebar() {
     >
       {/* Logo Section */}
       <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
-        <Link href="/dashboard" className="flex items-center gap-3">
+        <Link href={navItems[0]?.href || "/"} className="flex items-center gap-3">
           <img src="/lgu-seal.png" alt="LGU Quezon" className="w-7 h-7 rounded-full" />
           {!collapsed && (
             <div className="flex flex-col">
               <span className="text-sm font-bold tracking-tight text-sidebar-foreground">
-                LGU-SSO
+                {branding.title}
               </span>
               <span className="text-[10px] font-medium uppercase tracking-wider text-sidebar-foreground/60">
-                Admin Portal
+                {branding.subtitle}
               </span>
             </div>
           )}
@@ -68,9 +52,10 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex flex-col gap-1 p-3">
-        {navigation.map((item) => {
-          const isActive =
-            pathname === item.href || pathname.startsWith(`${item.href}/`);
+        {navItems.map((item) => {
+          const isActive = item.exact
+            ? pathname === item.href
+            : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
           return (
             <Link
