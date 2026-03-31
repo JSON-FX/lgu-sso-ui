@@ -55,7 +55,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { psgcApi, PSGCRegion, PSGCProvince, PSGCMunicipality, PSGCBarangay } from "@/lib/api/psgc";
-import { Employee, Office, UpdateEmployeeData } from "@/types";
+import { Employee, Office, Position, UpdateEmployeeData } from "@/types";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -77,6 +77,8 @@ export default function EmployeeDetailPage() {
   const [municipalities, setMunicipalities] = useState<PSGCMunicipality[]>([]);
   const [barangays, setBarangays] = useState<PSGCBarangay[]>([]);
   const [offices, setOffices] = useState<Office[]>([]);
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [positionOpen, setPositionOpen] = useState(false);
 
   // Location form state - track codes for cascading and names for display/submit
   const [regionCode, setRegionCode] = useState<string>("");
@@ -111,9 +113,18 @@ export default function EmployeeDetailPage() {
           // Offices endpoint not available, continue without it
         }
 
+        let positionsData: Position[] = [];
+        try {
+          const positionsRes = await api.positions.list();
+          positionsData = positionsRes.data;
+        } catch {
+          // Positions endpoint not available
+        }
+
         setEmployee(employeeRes.data);
         setRegions(regionsData);
         setOffices(officesData);
+        setPositions(positionsData);
 
         setFormData({
           first_name: employeeRes.data.first_name,
@@ -130,7 +141,7 @@ export default function EmployeeDetailPage() {
           residence: employeeRes.data.residence,
           is_active: employeeRes.data.is_active,
           office_id: employeeRes.data.office?.id,
-          position: employeeRes.data.position || "",
+          position_id: employeeRes.data.position?.id || undefined,
           date_employed: employeeRes.data.date_employed || "",
           date_terminated: employeeRes.data.date_terminated || "",
         });
@@ -224,6 +235,7 @@ export default function EmployeeDetailPage() {
         block_number: formData.block_number || null,
         building_floor: formData.building_floor || null,
         office_id: formData.office_id || null,
+        position_id: formData.position_id || null,
         date_employed: formData.date_employed || null,
         date_terminated: formData.date_terminated || null,
       };
@@ -306,11 +318,11 @@ export default function EmployeeDetailPage() {
                 </Badge>
               </div>
               <p className="text-muted-foreground">
-                {employee.position && employee.office
-                  ? `${employee.position} - ${employee.office.abbreviation}`
-                  : employee.position || employee.email}
+                {employee.position?.title && employee.office
+                  ? `${employee.position.title} - ${employee.office.abbreviation}`
+                  : employee.position?.title || employee.email}
               </p>
-              {(employee.position || employee.office) && (
+              {(employee.position?.title || employee.office) && (
                 <p className="text-sm text-muted-foreground">{employee.email}</p>
               )}
             </div>
@@ -538,13 +550,49 @@ export default function EmployeeDetailPage() {
                 </Popover>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="position">Position</Label>
-                <Input
-                  id="position"
-                  value={formData.position || ""}
-                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                  placeholder="e.g., Budget Analyst, Administrative Clerk"
-                />
+                <Label>Position</Label>
+                <Popover open={positionOpen} onOpenChange={setPositionOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={positionOpen}
+                      className="w-full justify-between font-normal"
+                    >
+                      {formData.position_id
+                        ? positions.find((p) => p.id === formData.position_id)?.title
+                        : "Select position"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search position..." />
+                      <CommandList>
+                        <CommandEmpty>No position found.</CommandEmpty>
+                        <CommandGroup>
+                          {positions.map((p) => (
+                            <CommandItem
+                              key={p.id}
+                              value={p.title}
+                              onSelect={() => {
+                                setFormData({ ...formData, position_id: p.id });
+                                setPositionOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={`mr-2 h-4 w-4 ${
+                                  formData.position_id === p.id ? "opacity-100" : "opacity-0"
+                                }`}
+                              />
+                              {p.title}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="date_employed">Date Employed</Label>

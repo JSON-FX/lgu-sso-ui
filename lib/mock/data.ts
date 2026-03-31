@@ -1,4 +1,4 @@
-import { Employee, Application, AuditLog, AuthUser, Location, Office } from "@/types";
+import { Employee, Application, AuditLog, AuthUser, Location, Office, Position } from "@/types";
 
 // ============================================
 // OFFICES DATA
@@ -15,6 +15,28 @@ export const mockOffices: Office[] = [
   { id: 8, name: "Municipal Engineering Office", abbreviation: "MEO" },
   { id: 9, name: "Office of the Municipal Mayor", abbreviation: "OMM" },
   { id: 10, name: "Municipal Civil Registrar's Office", abbreviation: "MCRO" },
+];
+
+// ============================================
+// POSITIONS DATA
+// ============================================
+
+export const mockPositions: Position[] = [
+  { id: 1, title: "Municipal Administrator" },
+  { id: 2, title: "HR Manager" },
+  { id: 3, title: "Senior Accountant" },
+  { id: 4, title: "Licensing Officer III" },
+  { id: 5, title: "Administrative Clerk" },
+  { id: 6, title: "Budget Analyst" },
+  { id: 7, title: "IT Manager" },
+  { id: 8, title: "Assessment Clerk II" },
+  { id: 9, title: "IT Staff" },
+  { id: 10, title: "Municipal Treasurer" },
+  { id: 11, title: "Municipal Assessor" },
+  { id: 12, title: "Municipal Engineer" },
+  { id: 13, title: "Records Officer" },
+  { id: 14, title: "Administrative Aide" },
+  { id: 15, title: "Revenue Collection Clerk" },
 ];
 
 // ============================================
@@ -172,7 +194,7 @@ export const mockEmployees: Employee[] = [
     city: "San Fernando",
     barangay: "Alasas",
     office: { id: 5, name: "Office of the Municipal Administrator", abbreviation: "OMA" },
-    position: "Municipal Administrator",
+    position: { id: 1, title: "Municipal Administrator" },
     date_employed: "2018-06-01",
     date_terminated: null,
     created_at: "2023-01-15T08:30:00+00:00",
@@ -207,7 +229,7 @@ export const mockEmployees: Employee[] = [
     city: "San Fernando",
     barangay: "Bulaon",
     office: { id: 2, name: "Human Resource Management Office", abbreviation: "HRMO" },
-    position: "HR Manager",
+    position: { id: 2, title: "HR Manager" },
     date_employed: "2020-03-15",
     date_terminated: null,
     created_at: "2023-03-10T10:00:00+00:00",
@@ -242,7 +264,7 @@ export const mockEmployees: Employee[] = [
     city: "San Fernando",
     barangay: "Del Carmen",
     office: { id: 3, name: "Municipal Treasurer's Office", abbreviation: "MTO" },
-    position: "Senior Accountant",
+    position: { id: 3, title: "Senior Accountant" },
     date_employed: "2019-01-10",
     date_terminated: null,
     created_at: "2023-02-20T09:00:00+00:00",
@@ -277,7 +299,7 @@ export const mockEmployees: Employee[] = [
     city: "San Fernando",
     barangay: "Calulut",
     office: { id: 7, name: "Business Permits and Licensing Office", abbreviation: "BPLO" },
-    position: "Licensing Officer III",
+    position: { id: 4, title: "Licensing Officer III" },
     date_employed: "2021-06-01",
     date_terminated: null,
     created_at: "2023-05-05T14:00:00+00:00",
@@ -311,7 +333,7 @@ export const mockEmployees: Employee[] = [
     city: "San Fernando",
     barangay: "Alasas",
     office: { id: 10, name: "Municipal Civil Registrar's Office", abbreviation: "MCRO" },
-    position: "Administrative Clerk",
+    position: { id: 5, title: "Administrative Clerk" },
     date_employed: "2022-08-15",
     date_terminated: null,
     created_at: "2023-08-15T08:00:00+00:00",
@@ -346,7 +368,7 @@ export const mockEmployees: Employee[] = [
     city: "San Fernando",
     barangay: "Bulaon",
     office: { id: 1, name: "Municipal Budget Office", abbreviation: "MBO" },
-    position: "Budget Analyst",
+    position: { id: 6, title: "Budget Analyst" },
     date_employed: "2015-03-01",
     date_terminated: "2024-01-15",
     created_at: "2022-01-10T08:00:00+00:00",
@@ -378,7 +400,7 @@ export const mockEmployees: Employee[] = [
     city: "San Fernando",
     barangay: "Del Carmen",
     office: { id: 6, name: "Municipal Information Technology Office", abbreviation: "MITO" },
-    position: "IT Manager",
+    position: { id: 7, title: "IT Manager" },
     date_employed: "2019-04-01",
     date_terminated: null,
     created_at: "2023-04-01T09:00:00+00:00",
@@ -416,7 +438,7 @@ export const mockEmployees: Employee[] = [
     city: "San Fernando",
     barangay: "Calulut",
     office: { id: 4, name: "Municipal Assessor's Office", abbreviation: "MAO" },
-    position: "Assessment Clerk II",
+    position: { id: 8, title: "Assessment Clerk II" },
     date_employed: "2020-06-20",
     date_terminated: null,
     created_at: "2023-06-20T10:00:00+00:00",
@@ -450,7 +472,7 @@ export const mockEmployees: Employee[] = [
     city: "San Fernando",
     barangay: "Alasas",
     office: { id: 6, name: "Municipal Information Technology Office", abbreviation: "MITO" },
-    position: "IT Staff",
+    position: { id: 9, title: "IT Staff" },
     date_employed: "2026-03-25",
     date_terminated: null,
     created_at: "2026-03-25T08:00:00+00:00",
@@ -578,7 +600,7 @@ export const mockCurrentUser: AuthUser = {
   username: "m.delacruz",
   must_change_password: false,
   office: { id: 5, name: "Office of the Municipal Administrator", abbreviation: "OMA" },
-  position: "Municipal Administrator",
+  position: { id: 1, title: "Municipal Administrator" },
   date_employed: "2018-06-01",
   date_terminated: null,
   applications: [

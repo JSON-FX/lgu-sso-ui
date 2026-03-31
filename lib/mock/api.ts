@@ -17,6 +17,7 @@ import {
   AuthUser,
   Location,
   Office,
+  Position,
   CreateEmployeeData,
   UpdateEmployeeData,
   CreateApplicationData,
@@ -42,6 +43,7 @@ import {
   mockCities,
   mockBarangays,
   mockOffices,
+  mockPositions,
   MOCK_CREDENTIALS,
 } from "./data";
 
@@ -322,6 +324,7 @@ export const mockEmployeeApi = {
     }
 
     const office = data.office_id ? mockOffices.find((o) => o.id === data.office_id) : null;
+    const position = data.position_id ? mockPositions.find((p) => p.id === data.position_id) : null;
 
     const newEmployee: Employee = {
       uuid: `emp-${generateUUID()}`,
@@ -354,7 +357,7 @@ export const mockEmployeeApi = {
       city: data.city || null,
       barangay: data.barangay || null,
       office: office || null,
-      position: data.position || null,
+      position: position || null,
       date_employed: data.date_employed || null,
       date_terminated: data.date_terminated || null,
       created_at: new Date().toISOString(),
@@ -783,6 +786,17 @@ export const mockOfficeApi = {
       throw new Error("Office not found.");
     }
     return { data: office };
+  },
+};
+
+// ============================================
+// POSITION ENDPOINTS
+// ============================================
+
+export const mockPositionApi = {
+  async list(): Promise<{ data: Position[] }> {
+    await delay(200);
+    return { data: mockPositions };
   },
 };
 

@@ -9,6 +9,11 @@ export interface Office {
   abbreviation: string;
 }
 
+export interface Position {
+  id: number;
+  title: string;
+}
+
 export interface Employee {
   uuid: string;
   first_name: string;
@@ -34,7 +39,7 @@ export interface Employee {
   city: string | null;
   barangay: string | null;
   office: Office | null;
-  position: string | null;
+  position: Position | null;
   date_employed: string | null;
   date_terminated: string | null;
   created_at: string;
@@ -69,7 +74,7 @@ export interface CreateEmployeeData {
   email?: string;
   password?: string;
   office_id?: number;
-  position: string;
+  position_id?: number;
   date_employed?: string;
   date_terminated?: string;
 }
@@ -93,7 +98,7 @@ export interface UpdateEmployeeData {
   email?: string;
   is_active?: boolean;
   office_id?: number;
-  position?: string;
+  position_id?: number;
   date_employed?: string;
   date_terminated?: string;
 }

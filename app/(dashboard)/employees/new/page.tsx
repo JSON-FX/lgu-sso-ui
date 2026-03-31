@@ -31,7 +31,7 @@ import {
 import { ArrowLeft, Loader2, UserPlus, User, MapPin, Lock, Briefcase, Check, ChevronsUpDown, Info } from "lucide-react";
 import { api } from "@/lib/api";
 import { psgcApi, PSGCRegion, PSGCProvince, PSGCMunicipality, PSGCBarangay } from "@/lib/api/psgc";
-import { CreateEmployeeData, Office } from "@/types";
+import { CreateEmployeeData, Office, Position } from "@/types";
 import { toast } from "sonner";
 
 export default function NewEmployeePage() {
@@ -42,6 +42,8 @@ export default function NewEmployeePage() {
   const [municipalities, setMunicipalities] = useState<PSGCMunicipality[]>([]);
   const [barangays, setBarangays] = useState<PSGCBarangay[]>([]);
   const [offices, setOffices] = useState<Office[]>([]);
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [positionOpen, setPositionOpen] = useState(false);
 
   const [formData, setFormData] = useState<CreateEmployeeData>({
     first_name: "",
@@ -61,7 +63,7 @@ export default function NewEmployeePage() {
     building_floor: "",
     residence: "",
     office_id: undefined,
-    position: "",
+    position_id: undefined,
     date_employed: "",
   });
 
@@ -95,6 +97,13 @@ export default function NewEmployeePage() {
         setOffices(officesRes.data);
       } catch {
         // Offices endpoint not available, continue without it
+      }
+
+      try {
+        const positionsRes = await api.positions.list();
+        setPositions(positionsRes.data);
+      } catch {
+        // Positions endpoint not available
       }
     }
     loadData();
@@ -166,9 +175,6 @@ export default function NewEmployeePage() {
     if (!formData.birthday) {
       newErrors.birthday = "Birthday is required";
     }
-    if (!formData.position) {
-      newErrors.position = "Position is required";
-    }
     if (!formData.residence) {
       newErrors.residence = "Street address is required";
     }
@@ -200,6 +206,7 @@ export default function NewEmployeePage() {
         block_number: formData.block_number || null,
         building_floor: formData.building_floor || null,
         office_id: formData.office_id || null,
+        position_id: formData.position_id || null,
         date_employed: formData.date_employed || null,
         email: formData.email || undefined,
       };
@@ -429,17 +436,49 @@ export default function NewEmployeePage() {
               </Popover>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="position">
-                Position <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="position"
-                value={formData.position}
-                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                className={errors.position ? "border-destructive" : ""}
-                placeholder="e.g., Budget Analyst, Administrative Clerk"
-              />
-              {errors.position && <p className="text-xs text-destructive">{errors.position}</p>}
+              <Label>Position</Label>
+              <Popover open={positionOpen} onOpenChange={setPositionOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={positionOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    {formData.position_id
+                      ? positions.find((p) => p.id === formData.position_id)?.title
+                      : "Select position"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search position..." />
+                    <CommandList>
+                      <CommandEmpty>No position found.</CommandEmpty>
+                      <CommandGroup>
+                        {positions.map((p) => (
+                          <CommandItem
+                            key={p.id}
+                            value={p.title}
+                            onSelect={() => {
+                              setFormData({ ...formData, position_id: p.id });
+                              setPositionOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={`mr-2 h-4 w-4 ${
+                                formData.position_id === p.id ? "opacity-100" : "opacity-0"
+                              }`}
+                            />
+                            {p.title}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-2">
               <Label htmlFor="date_employed">Date Employed</Label>

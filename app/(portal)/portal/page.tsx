@@ -29,9 +29,9 @@ import {
 } from "@/components/ui/command";
 import { Loader2, Save, X, Check, ChevronsUpDown, User, Lock, Briefcase, MapPin, Info } from "lucide-react";
 import { toast } from "sonner";
-import { portalApi } from "@/lib/api";
+import { portalApi, api } from "@/lib/api";
 import { psgcApi, PSGCRegion, PSGCProvince, PSGCMunicipality, PSGCBarangay } from "@/lib/api/psgc";
-import type { Employee } from "@/types/employee";
+import type { Employee, Office, Position } from "@/types/employee";
 import type { UpdatePortalProfileData } from "@/types/portal";
 
 interface FormData {
@@ -40,7 +40,9 @@ interface FormData {
   civil_status: Employee["civil_status"];
   nationality: string;
   suffix: string;
-  position: string;
+  position_id: number | undefined;
+  office_id: number | undefined;
+  date_employed: string;
   residence: string;
   house_number: string;
   block_number: string;
@@ -111,7 +113,9 @@ export default function PortalProfilePage() {
     civil_status: "single",
     nationality: "",
     suffix: "",
-    position: "",
+    position_id: undefined,
+    office_id: undefined,
+    date_employed: "",
     residence: "",
     house_number: "",
     block_number: "",
@@ -133,11 +137,19 @@ export default function PortalProfilePage() {
   const [selectedProvinceCode, setSelectedProvinceCode] = useState("");
   const [selectedCityCode, setSelectedCityCode] = useState("");
 
+  // Offices
+  const [offices, setOffices] = useState<Office[]>([]);
+
+  // Positions
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [positionOpen, setPositionOpen] = useState(false);
+
   // Popover open states
   const [regionOpen, setRegionOpen] = useState(false);
   const [provinceOpen, setProvinceOpen] = useState(false);
   const [municipalityOpen, setMunicipalityOpen] = useState(false);
   const [barangayOpen, setBarangayOpen] = useState(false);
+  const [officeOpen, setOfficeOpen] = useState(false);
 
   useEffect(() => {
     async function loadProfile() {
@@ -150,7 +162,9 @@ export default function PortalProfilePage() {
           civil_status: data.civil_status || "single",
           nationality: data.nationality || "",
           suffix: data.suffix || "",
-          position: data.position || "",
+          position_id: data.position?.id || undefined,
+          office_id: data.office?.id || undefined,
+          date_employed: data.date_employed || "",
           residence: data.residence || "",
           house_number: data.house_number || "",
           block_number: data.block_number || "",
@@ -170,6 +184,8 @@ export default function PortalProfilePage() {
 
     loadProfile();
     psgcApi.getRegions().then(setRegions).catch(console.error);
+    api.offices.list().then((res) => setOffices(res.data)).catch(() => {});
+    api.positions.list().then((res) => setPositions(res.data)).catch(() => {});
   }, []);
 
   const handleRegionChange = async (code: string, name: string) => {
@@ -231,7 +247,9 @@ export default function PortalProfilePage() {
       civil_status: profile.civil_status || "single",
       nationality: profile.nationality || "",
       suffix: profile.suffix || "",
-      position: profile.position || "",
+      position_id: profile.position?.id || undefined,
+      office_id: profile.office?.id || undefined,
+      date_employed: profile.date_employed || "",
       residence: profile.residence || "",
       house_number: profile.house_number || "",
       block_number: profile.block_number || "",
@@ -261,7 +279,9 @@ export default function PortalProfilePage() {
     if (formData.civil_status !== profile.civil_status) changes.civil_status = formData.civil_status;
     if (formData.nationality !== (profile.nationality || "")) changes.nationality = formData.nationality;
     if (formData.suffix !== (profile.suffix || "")) changes.suffix = formData.suffix;
-    if (formData.position !== (profile.position || "")) changes.position = formData.position;
+    if (formData.position_id !== (profile.position?.id || undefined)) changes.position_id = formData.position_id;
+    if (formData.office_id !== (profile.office?.id || undefined)) changes.office_id = formData.office_id;
+    if (formData.date_employed !== (profile.date_employed || "")) changes.date_employed = formData.date_employed;
     if (formData.residence !== (profile.residence || "")) changes.residence = formData.residence;
     if (formData.house_number !== (profile.house_number || "")) changes.house_number = formData.house_number;
     if (formData.block_number !== (profile.block_number || "")) changes.block_number = formData.block_number;
@@ -405,20 +425,105 @@ export default function PortalProfilePage() {
           <CardDescription>Office assignment and position details</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-6 md:grid-cols-2">
-          <ProfileField label="Office" value={profile?.office?.name} />
           <div className="space-y-2">
-            <Label htmlFor="position">Position</Label>
+            <Label>Office</Label>
+            <Popover open={officeOpen} onOpenChange={setOfficeOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={officeOpen}
+                  className="w-full justify-between font-normal"
+                >
+                  {formData.office_id
+                    ? offices.find((o) => o.id === formData.office_id)?.name
+                    : "Select office"}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search office..." />
+                  <CommandList>
+                    <CommandEmpty>No office found.</CommandEmpty>
+                    <CommandGroup>
+                      {offices.map((o) => (
+                        <CommandItem
+                          key={o.id}
+                          value={`${o.name} ${o.abbreviation}`}
+                          onSelect={() => {
+                            setFormData((prev) => ({ ...prev, office_id: o.id }));
+                            setOfficeOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={`mr-2 h-4 w-4 ${
+                              formData.office_id === o.id ? "opacity-100" : "opacity-0"
+                            }`}
+                          />
+                          {o.name} ({o.abbreviation})
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="space-y-2">
+            <Label>Position</Label>
+            <Popover open={positionOpen} onOpenChange={setPositionOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={positionOpen}
+                  className="w-full justify-between font-normal"
+                >
+                  {formData.position_id
+                    ? positions.find((p) => p.id === formData.position_id)?.title
+                    : "Select position"}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search position..." />
+                  <CommandList>
+                    <CommandEmpty>No position found.</CommandEmpty>
+                    <CommandGroup>
+                      {positions.map((p) => (
+                        <CommandItem
+                          key={p.id}
+                          value={p.title}
+                          onSelect={() => {
+                            setFormData((prev) => ({ ...prev, position_id: p.id }));
+                            setPositionOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={`mr-2 h-4 w-4 ${
+                              formData.position_id === p.id ? "opacity-100" : "opacity-0"
+                            }`}
+                          />
+                          {p.title}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="date_employed">Date Employed</Label>
             <Input
-              id="position"
-              value={formData.position}
-              onChange={(e) => setFormData((prev) => ({ ...prev, position: e.target.value }))}
-              placeholder="e.g., Budget Analyst, Administrative Clerk"
+              id="date_employed"
+              type="date"
+              value={formData.date_employed}
+              onChange={(e) => setFormData((prev) => ({ ...prev, date_employed: e.target.value }))}
             />
           </div>
-          <ProfileField
-            label="Date Employed"
-            value={profile?.date_employed}
-          />
         </CardContent>
       </Card>
 

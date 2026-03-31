@@ -49,9 +49,9 @@ export function ViewEmployeeModal({ employee, open, onOpenChange }: ViewEmployee
               <div>
                 <DialogTitle className="text-xl">{employee.full_name}</DialogTitle>
                 <DialogDescription className="flex items-center gap-2">
-                  {employee.position && employee.office
-                    ? `${employee.position} - ${employee.office.abbreviation}`
-                    : employee.position || employee.email}
+                  {employee.position?.title && employee.office
+                    ? `${employee.position.title} - ${employee.office.abbreviation}`
+                    : employee.position?.title || employee.email}
                 </DialogDescription>
               </div>
             </div>
@@ -122,7 +122,7 @@ export function ViewEmployeeModal({ employee, open, onOpenChange }: ViewEmployee
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Position</p>
-                <p className="font-medium">{employee.position || "Not specified"}</p>
+                <p className="font-medium">{employee.position?.title || "Not specified"}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Date Employed</p>

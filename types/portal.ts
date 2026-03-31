@@ -12,5 +12,7 @@ export interface UpdatePortalProfileData {
   province?: string;
   city?: string;
   barangay?: string;
-  position?: string;
+  position_id?: number;
+  office_id?: number;
+  date_employed?: string;
 }

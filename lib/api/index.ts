@@ -15,6 +15,7 @@ import { applicationApi } from "./applications";
 import { auditApi } from "./audit";
 import { locationApi } from "./locations";
 import { officeApi } from "./offices";
+import { positionApi } from "./positions";
 import { statsApi } from "./stats";
 import { portalApi as realPortalApi } from "./portal";
 import { ssoApi as realSsoApi } from "./sso";
@@ -26,6 +27,7 @@ import {
   mockAuditApi,
   mockLocationApi,
   mockOfficeApi,
+  mockPositionApi,
   mockStatsApi,
   mockPortalApi,
   mockSsoApi,
@@ -42,6 +44,7 @@ export const api = {
   audit: USE_MOCK_API ? mockAuditApi : auditApi,
   locations: USE_MOCK_API ? mockLocationApi : locationApi,
   offices: USE_MOCK_API ? mockOfficeApi : officeApi,
+  positions: USE_MOCK_API ? mockPositionApi : positionApi,
   stats: USE_MOCK_API ? mockStatsApi : statsApi,
 };
 
@@ -49,7 +52,7 @@ export const portalApi = USE_MOCK_API ? mockPortalApi : realPortalApi;
 export const ssoApi = USE_MOCK_API ? mockSsoApi : realSsoApi;
 
 // Export individual APIs for direct imports
-export { authApi, employeeApi, applicationApi, auditApi, locationApi, officeApi, statsApi };
+export { authApi, employeeApi, applicationApi, auditApi, locationApi, officeApi, positionApi, statsApi };
 export { portalApi as realPortalApi } from "./portal";
 export { ssoApi as realSsoApi } from "./sso";
 
