@@ -103,7 +103,7 @@ function SSOLoginContent() {
 
       // Check if user must change password before proceeding
       if (data.employee?.must_change_password) {
-        window.location.href = `/setup-account?redirect_uri=${encodeURIComponent(redirectUri!)}&state=${encodeURIComponent(state!)}`;
+        window.location.href = `/setup-account?client_id=${encodeURIComponent(clientId!)}&redirect_uri=${encodeURIComponent(redirectUri!)}&state=${encodeURIComponent(state!)}`;
         return;
       }
 
