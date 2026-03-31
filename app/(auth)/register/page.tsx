@@ -36,6 +36,12 @@ interface FieldErrors {
   lastName?: string;
 }
 
+function toTitleCase(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/(?:^|\s|-)\S/g, (char) => char.toUpperCase());
+}
+
 function RegisterContent() {
   const searchParams = useSearchParams();
   const redirectSso = searchParams.get("redirect_sso") === "true";
@@ -203,7 +209,7 @@ function RegisterContent() {
                       placeholder="Juan"
                       value={firstName}
                       onChange={(e) => {
-                        setFirstName(e.target.value);
+                        setFirstName(toTitleCase(e.target.value));
                         if (fieldErrors.firstName) {
                           setFieldErrors((prev) => ({ ...prev, firstName: undefined }));
                         }
@@ -231,7 +237,7 @@ function RegisterContent() {
                       type="text"
                       placeholder="Santos"
                       value={middleName}
-                      onChange={(e) => setMiddleName(e.target.value)}
+                      onChange={(e) => setMiddleName(toTitleCase(e.target.value))}
                       className="h-11"
                       disabled={isLoading}
                       autoComplete="additional-name"
@@ -248,7 +254,7 @@ function RegisterContent() {
                       placeholder="Dela Cruz"
                       value={lastName}
                       onChange={(e) => {
-                        setLastName(e.target.value);
+                        setLastName(toTitleCase(e.target.value));
                         if (fieldErrors.lastName) {
                           setFieldErrors((prev) => ({ ...prev, lastName: undefined }));
                         }
