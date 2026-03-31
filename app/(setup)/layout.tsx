@@ -35,7 +35,16 @@ export default function SetupLayout({
     }
 
     if (!mustChangePassword) {
-      router.push(isSuperAdmin ? "/dashboard" : "/portal");
+      const params = new URLSearchParams(window.location.search);
+      const clientId = params.get("client_id");
+      const redirectUri = params.get("redirect_uri");
+      const state = params.get("state");
+
+      if (clientId && redirectUri && state) {
+        window.location.href = `/sso/login?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}`;
+      } else {
+        router.push(isSuperAdmin ? "/dashboard" : "/portal");
+      }
     }
   }, [isLoading, isAuthenticated, mustChangePassword, isSuperAdmin, router]);
 
