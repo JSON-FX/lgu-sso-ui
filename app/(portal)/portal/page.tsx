@@ -436,7 +436,7 @@ export default function PortalProfilePage() {
                   className="w-full justify-between font-normal"
                 >
                   {formData.office_id
-                    ? offices.find((o) => o.id === formData.office_id)?.name
+                    ? (() => { const o = offices.find((o) => o.id === formData.office_id); return o ? `${o.abbreviation} - ${o.name}` : "Select office"; })()
                     : "Select office"}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -450,7 +450,7 @@ export default function PortalProfilePage() {
                       {offices.map((o) => (
                         <CommandItem
                           key={o.id}
-                          value={`${o.name} ${o.abbreviation}`}
+                          value={`${o.abbreviation} - ${o.name}`}
                           onSelect={() => {
                             setFormData((prev) => ({ ...prev, office_id: o.id }));
                             setOfficeOpen(false);
@@ -461,7 +461,7 @@ export default function PortalProfilePage() {
                               formData.office_id === o.id ? "opacity-100" : "opacity-0"
                             }`}
                           />
-                          {o.name} ({o.abbreviation})
+                          {o.abbreviation} - {o.name}
                         </CommandItem>
                       ))}
                     </CommandGroup>

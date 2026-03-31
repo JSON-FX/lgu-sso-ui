@@ -116,7 +116,7 @@ export function ViewEmployeeModal({ employee, open, onOpenChange }: ViewEmployee
                 <p className="text-xs text-muted-foreground">Office</p>
                 <p className="font-medium">
                   {employee.office
-                    ? `${employee.office.name} (${employee.office.abbreviation})`
+                    ? `${employee.office.abbreviation} - ${employee.office.name}`
                     : "Not assigned"}
                 </p>
               </div>
