@@ -324,7 +324,7 @@ function SetupAccountContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fadeKey, setFadeKey] = useState(0);
 
-  const { user, sessionPassword, changePassword, isSuperAdmin, token } =
+  const { user, sessionPassword, changePassword, isSuperAdmin } =
     useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -337,7 +337,14 @@ function SetupAccountContent() {
   const handleSetPassword = useCallback(async () => {
     if (!sessionPassword) {
       toast.error("Session expired. Please log in again.");
-      router.push("/login");
+      const clientId = searchParams.get("client_id");
+      const redirectUri = searchParams.get("redirect_uri");
+      const state = searchParams.get("state");
+      if (clientId && redirectUri && state) {
+        window.location.href = `/sso/login?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}`;
+      } else {
+        router.push("/login");
+      }
       return;
     }
 
@@ -354,20 +361,20 @@ function SetupAccountContent() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [sessionPassword, newPassword, changePassword, goToStep, router]);
+  }, [sessionPassword, newPassword, changePassword, goToStep, router, searchParams]);
 
   const handleDoneContinue = useCallback(() => {
+    const clientId = searchParams.get("client_id");
     const redirectUri = searchParams.get("redirect_uri");
     const state = searchParams.get("state");
 
-    if (redirectUri && state && token) {
-      const separator = redirectUri.includes("?") ? "&" : "?";
-      window.location.href = `${redirectUri}${separator}token=${encodeURIComponent(token)}&state=${encodeURIComponent(state)}`;
+    if (clientId && redirectUri && state) {
+      window.location.href = `/sso/login?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}`;
       return;
     }
 
     router.push(isSuperAdmin ? "/dashboard" : "/portal");
-  }, [searchParams, token, isSuperAdmin, router]);
+  }, [searchParams, isSuperAdmin, router]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4 py-8">
