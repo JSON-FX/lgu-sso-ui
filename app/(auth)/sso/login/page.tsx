@@ -17,6 +17,7 @@ import { User, Lock, Loader2, AlertCircle } from "lucide-react";
 
 import { toast } from "sonner";
 import { api, ssoApi } from "@/lib/api";
+import { useAuth } from "@/hooks/use-auth";
 
 type ValidationState =
   | { status: "loading" }
@@ -34,6 +35,7 @@ function SSOLoginContent() {
   const [validation, setValidation] = useState<ValidationState>({
     status: "loading",
   });
+  const { login: authLogin } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -94,15 +96,17 @@ function SSOLoginContent() {
     setIsSubmitting(true);
 
     try {
-      const data = await api.auth.login({ username, password });
+      // Use useAuth login to populate Zustand store (needed for setup-account)
+      await authLogin(username, password);
+      const { mustChangePassword, token } = useAuth.getState();
 
-      if (!data.access_token) {
+      if (!token) {
         setLoginError("Authentication succeeded but no token was returned.");
         return;
       }
 
       // Check if user must change password before proceeding
-      if (data.employee?.must_change_password) {
+      if (mustChangePassword) {
         window.location.href = `/setup-account?client_id=${encodeURIComponent(clientId!)}&redirect_uri=${encodeURIComponent(redirectUri!)}&state=${encodeURIComponent(state!)}`;
         return;
       }
@@ -110,7 +114,7 @@ function SSOLoginContent() {
       toast.success("Authentication successful. Redirecting...");
 
       const separator = redirectUri!.includes("?") ? "&" : "?";
-      const destination = `${redirectUri}${separator}token=${encodeURIComponent(data.access_token)}&state=${encodeURIComponent(state!)}`;
+      const destination = `${redirectUri}${separator}token=${encodeURIComponent(token)}&state=${encodeURIComponent(state!)}`;
       window.location.href = destination;
     } catch (err) {
       const message =
