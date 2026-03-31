@@ -21,7 +21,16 @@ export default function SetupLayout({
     if (isLoading) return;
 
     if (!isAuthenticated) {
-      router.push("/login");
+      const params = new URLSearchParams(window.location.search);
+      const clientId = params.get("client_id");
+      const redirectUri = params.get("redirect_uri");
+      const state = params.get("state");
+
+      if (clientId && redirectUri && state) {
+        router.push(`/sso/login?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}`);
+      } else {
+        router.push("/login");
+      }
       return;
     }
 
