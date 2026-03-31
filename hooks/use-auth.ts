@@ -115,7 +115,7 @@ export const useAuth = create<AuthState>()(
     }),
     {
       name: "lgu-sso-auth",
-      partialize: (state) => ({ token: state.token, user: state.user }),
+      partialize: (state) => ({ token: state.token, user: state.user, sessionPassword: state.sessionPassword }),
     }
   )
 );
