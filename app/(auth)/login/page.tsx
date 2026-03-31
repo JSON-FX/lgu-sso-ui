@@ -81,20 +81,6 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Feature highlights */}
-          <div className="mt-12 grid grid-cols-2 gap-6">
-            {[
-              { label: "Employees", value: "500+" },
-              { label: "Applications", value: "12" },
-              { label: "Daily Logins", value: "2.5k" },
-              { label: "Uptime", value: "99.9%" },
-            ].map((stat) => (
-              <div key={stat.label} className="rounded-xl bg-sidebar-accent/50 p-4">
-                <div className="text-2xl font-bold text-sidebar-primary">{stat.value}</div>
-                <div className="text-sm text-sidebar-foreground/60">{stat.label}</div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 
